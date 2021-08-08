@@ -8,7 +8,7 @@ var socket
 var loaded = false
 var results = []
 const timeout = 900000
-const baseUrl = 'ws://astro-clock.com'
+const baseUrl = 'wss://astro-clock.com'
 
 window.addEventListener('DOMContentLoaded', () => {
   drawChart()
