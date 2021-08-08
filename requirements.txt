@@ -1,5 +1,6 @@
 aiofiles==0.7.0
 aniso8601==7.0.0
+astropy==4.3.post1
 async-exit-stack==1.0.1
 async-generator==1.10
 cerridwen==1.4.1
@@ -18,9 +19,12 @@ idna==3.2
 itsdangerous==1.1.0
 Jinja2==3.0.1
 MarkupSafe==2.0.1
+numpy==1.21.1
 orjson==3.6.0
 promise==2.3
 pydantic==1.8.2
+pyerfa==2.0.0
+pyswisseph==2.8.0.post1
 python-dotenv==0.19.0
 python-multipart==0.0.5
 PyYAML==5.4.1
