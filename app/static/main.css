@@ -8,6 +8,12 @@ body {
   font-family: 'Avenir', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: #f9f9f9;
+  background-color: slateblue;
+}
+
+h2 {
+  margin-bottom: 0;
 }
 
 #app {
@@ -18,8 +24,27 @@ body {
 
 #content {
   display: grid;
-  justify-content: center;
   align-content: flex-start;
+  justify-content: flex-start;
   max-width: 100%;
-  margin: 200px auto 0 auto;
+  margin: 5px 20px 0 20px;
+}
+
+#planet-output {
+  font-size: 20px;
+  line-height: 30px;
+  padding: 0px 20px 10px 20px;
+  display: grid; grid-auto-flow: column; grid-auto-columns: auto; grid-column-gap: 50px;
+}
+
+.output-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
+  grid-column-gap: 50px
+}
+
+
+button {
+
 }
