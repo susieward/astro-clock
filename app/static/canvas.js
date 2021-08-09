@@ -9,6 +9,7 @@ const radius = 300
 const point_size = 4
 
 const signs = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+
 const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn']
 
 var signData = []
@@ -23,8 +24,8 @@ function drawChart() {
     const sign = signs[i]
 
     if (i > 0) {
-      startAngle = startAngle + 30
-      endAngle = endAngle + 30
+      startAngle = startAngle - 30
+      endAngle = endAngle - 30
     }
 
     ctx.beginPath()
@@ -59,7 +60,7 @@ function processResult(result) {
   const degrees = parseDegrees(result)
   const planetData = signData.find(s => s.sign === result.sign)
   const { startAngle } = planetData
-  const angle = startAngle + degrees
+  const angle = startAngle - degrees
   drawPoint(angle, `${result.name} (${degrees}°)`)
 }
 
@@ -97,29 +98,40 @@ function toRadians(degrees) {
 function calcSignCoords(sign) {
   switch (sign) {
     case 'Aries':
-      return { x: 20, y: 280 }
+      return { x: 10, y: 350 }
+
     case 'Taurus':
-      return { x: 90, y: 125 }
+      return { x: 40, y: 510 }
+
     case 'Gemini':
-      return { x: 225, y: 45 }
+      return { x: 150, y: 620 }
+
     case 'Cancer':
-      return { x: 420, y: 44 }
+      return { x: 330, y: 670 }
+
     case 'Leo':
-      return { x: 580, y: 125 }
+      return { x: 500, y: 630 }
+
     case 'Virgo':
-      return { x: 655, y: 280 }
+      return { x: 630, y: 510 }
+
     case 'Libra':
-      return { x: 655, y: 430 }
+      return { x: 655, y: 350 }
+
     case 'Scorpio':
-      return { x: 580, y: 600 }
+      return { x: 615, y: 200 }
+
     case 'Sagittarius':
-      return { x: 420, y: 670 }
+      return { x: 500, y: 80 }
+
     case 'Capricorn':
-      return { x: 225, y: 670 }
+      return { x: 320, y: 34 }
+
     case 'Aquarius':
-      return { x: 90, y: 575 }
+      return { x: 140, y: 75 }
+
     case 'Pisces':
-      return { x: 20, y: 440 }
+      return { x: 30, y: 200 }
   }
 }
 
