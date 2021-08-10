@@ -7,13 +7,10 @@ var interval
 var socket
 var loaded = false
 var results = []
-const timeout = 900000
 
-const config = {
-  dev: 'ws://127.0.0.1:8000',
-  prod: 'wss://astro-clock.com'
-}
-const baseUrl = config.prod
+const baseUrl = window.location.host.includes('astro-clock.com')
+  ? 'wss://astro-clock.com'
+  : 'ws://127.0.0.1:8000'
 
 window.addEventListener('DOMContentLoaded', () => {
   drawChart()
@@ -59,7 +56,6 @@ function updatePlanetOutput(result, keys, planet) {
   el.innerHTML = str
 }
 
-
 function initSocket() {
   const client_id = Date.now()
   socket = new WebSocket(`${baseUrl}/ws/${client_id}`)
@@ -91,7 +87,7 @@ function listenStart(){
 
   setTimeout(() => {
     listenStop()
-  }, timeout)
+  }, 900000)
 }
 
 function listenStop(){
