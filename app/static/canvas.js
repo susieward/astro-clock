@@ -1,7 +1,6 @@
 const svg = document.getElementById('responsive-svg')
 const chartEl = document.getElementById('chart-svg')
 const svgns = "http://www.w3.org/2000/svg"
-
 const signs = ['Aries', 'Taurus', 'Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
 var signData = []
@@ -24,9 +23,7 @@ export function drawChart() {
   let startAngle = 0
   let endAngle = 30
   signData = []
-
   drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
-
   for(let i = 0; i < signs.length; i++){
     const sign = signs[i]
     if (i > 0) {
