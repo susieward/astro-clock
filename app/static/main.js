@@ -1,62 +1,43 @@
-import { drawChart, drawPlanets } from './canvas.js'
+import { drawChart, drawPlanets, glyphs } from './canvas.js'
+import Sidenav from './sidenav.js'
 const PlanetOutputLg = document.getElementById('planet-output')
-const PlanetOutputSmall = document.getElementById('planet-output-sm')
-const sideNav = document.getElementById('sidenav')
-const menu = document.getElementById('menu')
-const closeBtn = document.getElementById('close-btn')
+const PlanetOutputSm = document.getElementById('planet-output-sm')
 const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
 const baseUrl = window.location.host.includes('astro-clock.com')
   ? 'wss://astro-clock.com'
   : 'ws://127.0.0.1:8000'
 
 var planetOutput = PlanetOutputLg
-var interval
 var socket
 var loaded = false
 var results = []
-var menuOpen = false
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (window.innerWidth <= 900) planetOutput = PlanetOutputSmall
+  if (window.innerWidth <= 900) planetOutput = PlanetOutputSm
   drawChart()
   initSocket()
-  listenStart()
-  menu.addEventListener('click', () => { openMenu() })
-  closeBtn.addEventListener('click', () => { closeMenu() })
+  Sidenav.init()
 })
-
 window.addEventListener('resize', () => {
-  if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSmall) {
+  if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSm) {
     planetOutput.innerHTML = ''
-    planetOutput = PlanetOutputSmall
+    planetOutput = PlanetOutputSm
     loaded = false
   } else if (window.innerWidth > 900 && planetOutput !== PlanetOutputLg) {
     planetOutput.innerHTML = ''
     planetOutput = PlanetOutputLg
     loaded = false
-    if (menuOpen) closeMenu()
+    if (Sidenav.navOpen) Sidenav.closeNav()
   }
   if (results.length > 0) drawPlanets(results)
 })
 
-function openMenu() {
-  sideNav.style.display = 'block'
-  sideNav.style.position = 'fixed'
-  sideNav.style.width = "200px"
-  menuOpen = true
-}
-function closeMenu() {
-  sideNav.style.width = "0px"
-  sideNav.style.display = 'none'
-  menuOpen = false
-}
-
 function initSocket() {
   const client_id = Date.now()
   socket = new WebSocket(`${baseUrl}/ws/${client_id}`)
-  socket.addEventListener('open', () => { requestData() })
+  socket.addEventListener('open', () => { console.log('connected') })
   socket.addEventListener('message', (event) => { processPlanetData(JSON.parse(event.data)) })
-  socket.addEventListener('close', () => { listenStop() })
+  socket.addEventListener('close', () => { console.log('disconnected') })
 }
 
 async function processPlanetData(latest) {
@@ -66,58 +47,35 @@ async function processPlanetData(latest) {
     for (const result of latest) {
       const planet = planets[result.id]
       const keys = Object.keys(result).filter(k => k !== 'id' && k !== 'sign')
-      if (!loaded) {
-        initPlanetOutput(result, keys, planet)
-      } else {
-        updatePlanetOutput(result, keys, planet)
-      }
+      if (!loaded) initPlanetOutput(result, keys, planet)
+      else updatePlanetOutput(result, keys, planet)
     }
     drawPlanets(latest)
     results = latest
     if (!loaded) loaded = true
   } catch (err) {
-    listenStop()
     throw err
   }
 }
 
 function initPlanetOutput(result, keys, planet) {
   const str = `<div id="${planet}">
-    ${keys.map((k, i) => {
-    return (i === keys.length - 1)
-      ? `<span>${result[k]}</span>`
-      : `<span>${result[k]}</span><br>`
-  }).join('')}</div>`
+    ${buildStr(result, keys)}
+  </div>`
   planetOutput.insertAdjacentHTML('beforeend', str)
 }
 
 function updatePlanetOutput(result, keys, planet) {
   const el = document.getElementById(`${planet}`)
-  const str = `${keys.map((k, i) => {
-  return (i === keys.length - 1)
-    ? `<span>${result[k]}</span>`
-    : `<span>${result[k]}</span><br>`
-  }).join('')}`
+  const str = buildStr(result, keys)
   el.innerHTML = str
 }
 
-async function requestData() {
-  if (socket && socket.readyState === 1) {
-    await socket.send('requesting data')
-  }
-}
-
-// request new planet data once per second
-function listenStart(){
-  interval = setInterval(requestData, 1000)
-  setTimeout(() => {
-    listenStop()
-  }, 1200000)
-}
-
-function listenStop(){
-  clearInterval(interval)
-  if (socket && socket.readyState === 1) {
-    socket.close()
-  }
+function buildStr(result, keys) {
+  const str = `${keys.map((k, i) => {
+    if (i === 0) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
+    else if (i === keys.length - 1) return `<span>${result[k]}</span>`
+    else return `<span>${result[k]}</span><br>`
+  }).join('')}`
+  return str
 }

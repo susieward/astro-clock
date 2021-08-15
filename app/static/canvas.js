@@ -2,7 +2,7 @@ const svg = document.getElementById('responsive-svg')
 const chartEl = document.getElementById('chart-svg')
 const svgns = "http://www.w3.org/2000/svg"
 const signs = ['Aries', 'Taurus', 'Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-
+export const glyphs = ['☉', '☽', '☿', '♀', '♂', '♃', '♄', '♅', '♆', '♇']
 var signData = []
 
 export function drawPlanets(data) {
@@ -12,18 +12,20 @@ export function drawPlanets(data) {
     const planetSignData = signData.find(s => s.sign === planet.sign)
     const { startAngle } = planetSignData
     const angle = startAngle - degrees
-    drawPoint(angle, `${planet.name} (${degrees}°)`)
+    const str = window.innerWidth <= 900
+      ? `${glyphs[planet.id]} ${degrees}°`
+      : `${planet.name} (${degrees}°)`
+    drawPoint(angle, str)
   }
 }
 
-// draw the astro chart on the screen
 export function drawChart() {
   chartEl.replaceChildren()
   const { center_x, center_y, min, radius } = getCurrentCanvas()
+  drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
   let startAngle = 0
   let endAngle = 30
   signData = []
-  drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
   for(let i = 0; i < signs.length; i++){
     const sign = signs[i]
     if (i > 0) {
@@ -49,14 +51,23 @@ export function drawChart() {
 }
 
 function drawPoint(angle, label){
-  const { x, y } = calcAngleCoords(angle)
+  let { x, y } = calcAngleCoords(angle)
   drawElement('circle', { cy: y, cx: x, r: 4, fill: '#f9f9f9', cursor: 'pointer' })
-  drawElement('text', {
-    x: x + 10,
-    y: y,
-    font: '14px Avenir',
-    fill: '#f9f9f9'
-  }, label)
+  if (angle > -180 && angle > -90) {
+    if (window.innerWidth <= 900) x = x - 60
+    else x = x - 100
+  } else if (angle < -180 && angle < -270) {
+    if (window.innerWidth <= 900) {
+      x = x - 40
+      y = y - 10
+    } else {
+      x = x - 60
+      y = y - 12
+    }
+  } else {
+    x = x + 10
+  }
+  drawElement('text', { x, y, font: '14px Avenir', fill: '#f9f9f9' }, label)
 }
 
 function calcAngleCoords(angle, method = getCurrentCanvas) {
@@ -81,7 +92,9 @@ function getCurrentCanvas() {
   const center_x = svg.clientWidth / 2
   const center_y = svg.clientHeight / 2
   const min = Math.min(svg.clientHeight, svg.clientWidth)
-  const radius = (min / 2) * 0.9
+  const radius = window.innerWidth <= 900
+    ? (min / 2) * 0.7
+    : (min / 2) * 0.9
   return { center_x, center_y, min, radius }
 }
 
@@ -97,8 +110,6 @@ function toRadians(degrees) {
 function drawElement(type, attrs, text = '') {
   const newEl = document.createElementNS(svgns, `${type}`)
   gsap.set(newEl, { attr: { ...attrs } })
-  if (type === 'text') {
-    newEl.append(text)
-  }
+  if (type === 'text') newEl.append(text)
   chartEl.appendChild(newEl)
 }

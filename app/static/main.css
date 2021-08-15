@@ -32,6 +32,8 @@ h2 {
   grid-auto-columns: auto;
   grid-auto-flow: column;
   justify-content: flex-start;
+  max-height: 70px;
+  height: 70px;
 }
 
 #app {
@@ -39,8 +41,11 @@ h2 {
   max-width: 100%;
   min-height: 100%;
   max-height: 100%;
-  align-content: flex-start;
   position: relative;
+  overflow: hidden;
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  align-content: flex-start;
 }
 
 #planet-output {
@@ -49,11 +54,21 @@ h2 {
   grid-auto-rows: auto;
   grid-row-gap: 15px;
   padding: 0px 20px 10px 20px;
+  height: 100%;
 }
 
 #planet-output > div {
   font-size: 18px;
   line-height: 28px;
+}
+
+#planet-output-sm {
+  position: relative;
+  margin-top: 10px;
+}
+
+#planet-output-sm > div {
+  margin-bottom: 10px;
 }
 
 svg#responsive-svg {
@@ -66,23 +81,40 @@ svg#responsive-svg {
   z-index: -1;
 }
 
-#sidenav {
-  height: 100%;
-  width: 0px;
-  z-index: 10;
-  display: none;
-  background-color: #222;
-  padding: 10px;
-  font-size: 16px;
-  line-height: 26px;
-}
-
 #menu {
   display: none;
 }
 
 #menu-icon {
   margin-top: 10px;
+}
+
+#sidenav {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: 200px;
+  left: -200px;
+  z-index: 10;
+  background-color: #222;
+  padding: 10px;
+  font-size: 16px;
+  line-height: 26px;
+  transition: 0.3s ease-in-out;
+}
+
+#close-btn {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  cursor: pointer;
+  font-size: 30px;
+  z-index: 11;
+}
+
+#close-btn::before {
+  content: "\00d7";
 }
 
 .line {
@@ -93,7 +125,6 @@ svg#responsive-svg {
   stroke-linejoin: round;
 }
 
-/* Hamburger */
 .line.top,
 .line.bottom {
   stroke-dasharray: 50px 600px;
@@ -105,7 +136,7 @@ svg#responsive-svg {
   stroke-dashoffset: 0px;
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1100px) {
   #planet-output > div {
     font-size: 16px;
     line-height: 26px;
@@ -117,7 +148,7 @@ svg#responsive-svg {
     display: inline-block;
     cursor: pointer;
   }
-  
+
   h2 {
     margin-left: 5px;
   }

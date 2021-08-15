@@ -27,7 +27,7 @@ class PlanetLogic:
         return {
             'name': planet.name(),
             'position': planet.pos(),
-            'id': getattr(planet, 'id'),
+            'id': planet.id,
             'sign': planet.sign()
         }
 
