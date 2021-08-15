@@ -5,15 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="../static/main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
     <title>Astro Clock</title>
   </head>
   <body>
+    <aside id="sidenav">
+      <div id="close-btn">x</div>
+      <div id="planet-output-sm"></div>
+    </aside>
     <div id="app">
-      <div id="content">
+      <div class="header">
+        <span id="menu">
+          <svg id="menu-icon" viewBox="0 0 120 120" width="60px" height="50px">
+            <g>
+              <path class="line top" d="M35,35h50c14.1,0,50.6,13,20.5,53.5s-121.9,21.6-94.4-40.3S111.6,8.4,85,35L35,85"/>
+              <path class="line bottom" d="M35,85h50c14.1,0,50.6-13,20.5-53.5S-16.4,9.9,11.1,71.8S111.6,111.6,85,85L35,35"/>
+              <line class="line cross" x1="35" y1="60" x2="85" y2="60"/>
+            </g>
+          </svg>
+        </span>
         <h2>Astro Clock</h2>
-        <div id="planet-output"></div>
-        <canvas style="margin: 0 auto" id="canvas" width="800" height="700"></canvas>
       </div>
+      <div id="planet-output"></div>
+      <svg id="responsive-svg" xmlns="http://www.w3.org/2000/svg">
+        <g id="chart-svg"></g>
+      </svg>
     </div>
     <script type="module" src="../static/canvas.js"></script>
     <script type="module" src="../static/main.js"></script>

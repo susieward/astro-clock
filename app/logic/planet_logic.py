@@ -1,4 +1,5 @@
-from app.models._planet import create_planet_metaclasses
+from app.models._planet import _Planet, planet_subclasses
+from app.utils import create_metaclasses
 
 class PlanetLogic:
     def __init__(self):
@@ -29,3 +30,6 @@ class PlanetLogic:
             'id': getattr(planet, 'id'),
             'sign': planet.sign()
         }
+
+def create_planet_metaclasses():
+    return create_metaclasses(_Planet, planet_subclasses)

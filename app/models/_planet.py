@@ -11,7 +11,10 @@ from cerridwen.planets import (
     Neptune,
     Pluto
 )
-planet_subclasses = [Sun, Moon, Mercury, Mars, Venus, Jupiter, Saturn, Uranus, Neptune, Pluto]
+planet_subclasses = [
+    Sun, Moon, Mercury, Mars, Venus, Jupiter,
+    Saturn, Uranus, Neptune, Pluto
+]
 
 class _Planet(Planet):
     def longitude(self, jd=None):
@@ -26,10 +29,3 @@ class _Planet(Planet):
 
     def pos(self):
         return str(self.position())
-
-
-def create_metaclass(subclass, base_class):
-    return type(f'_{subclass.__name__}', (base_class,), {})
-
-def create_planet_metaclasses():
-    return [create_metaclass(p, _Planet) for p in planet_subclasses]

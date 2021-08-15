@@ -1,89 +1,94 @@
-const Canvas = document.getElementById('canvas')
-const ctx = Canvas.getContext('2d')
+const svg = document.getElementById('responsive-svg')
+const chartEl = document.getElementById('chart-svg')
+const svgns = "http://www.w3.org/2000/svg"
 
-ctx.font = '14px Avenir'
-
-const center_x = 350
-const center_y = 350
-const radius = 300
-const point_size = 4
-
-const signs = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
-
-const coords = [{ x: 10, y: 350 }, { x: 40, y: 510 }, { x: 150, y: 620 }, { x: 330, y: 670 }, { x: 500, y: 630 }, { x: 630, y: 510 }, { x: 655, y: 350 }, { x: 615, y: 200 }, { x: 500, y: 80 }, { x: 320, y: 34 }, { x: 140, y: 75 }, { x: 30, y: 200 }]
+const signs = ['Aries', 'Taurus', 'Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 
 var signData = []
 
-// draw the astro chart on the canvas
-function drawChart() {
+export function drawPlanets(data) {
+  drawChart()
+  for (const planet of data) {
+    const degrees = parsePlanetDegrees(planet)
+    const planetSignData = signData.find(s => s.sign === planet.sign)
+    const { startAngle } = planetSignData
+    const angle = startAngle - degrees
+    drawPoint(angle, `${planet.name} (${degrees}°)`)
+  }
+}
+
+// draw the astro chart on the screen
+export function drawChart() {
+  chartEl.replaceChildren()
+  const { center_x, center_y, min, radius } = getCurrentCanvas()
   let startAngle = 0
   let endAngle = 30
   signData = []
 
+  drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
+
   for(let i = 0; i < signs.length; i++){
     const sign = signs[i]
-
     if (i > 0) {
       startAngle = startAngle - 30
       endAngle = endAngle - 30
     }
-
-    ctx.beginPath()
-    ctx.moveTo(350, 350);
-    ctx.arc(350, 350, radius, toRadians(startAngle), toRadians(endAngle), false)
-    ctx.strokeStyle = '#f9f9f9'
-    ctx.stroke()
-
-    const { x, y } = coords[i]
-    ctx.fillStyle = '#f9f9f9'
-    ctx.fillText(sign, x, y)
-    ctx.closePath()
-
-    signData.push({
-        id: i,
-        sign: sign,
-        startAngle: startAngle,
-        endAngle: endAngle
-      })
+    const { x, y } = calcAngleCoords(startAngle)
+    drawElement('path', {
+      d: `M ${center_x},${center_y}, L ${x},${y}`,
+      stroke: '#f9f9f9'
+    })
+    const mid = startAngle - 15
+    const method = () => ({ center_x, center_y, radius: (radius * 0.7), min })
+    const midCoords = calcAngleCoords(mid, method)
+    drawElement('text', {
+      x: midCoords.x - 30,
+      y: midCoords.y,
+      font: '14px Avenir',
+      fill: '#f9f9f9'
+    }, sign)
+    signData.push({ id: i, sign, startAngle, endAngle })
   }
-}
-
-function drawPlanets(data) {
-  ctx.clearRect(0, 0, Canvas.width, Canvas.height)
-  drawChart()
-  for (const result of data) {
-    processResult(result)
-  }
-}
-
-function processResult(result) {
-  const degrees = parseDegrees(result)
-  const planetData = signData.find(s => s.sign === result.sign)
-  const { startAngle } = planetData
-  const angle = startAngle - degrees
-  drawPoint(angle, `${result.name} (${degrees}°)`)
 }
 
 function drawPoint(angle, label){
+  const { x, y } = calcAngleCoords(angle)
+  drawElement('circle', { cy: y, cx: x, r: 4, fill: '#f9f9f9', cursor: 'pointer' })
+  drawElement('text', {
+    x: x + 10,
+    y: y,
+    font: '14px Avenir',
+    fill: '#f9f9f9'
+  }, label)
+}
+
+function calcAngleCoords(angle, method = getCurrentCanvas) {
+  const { center_x, center_y, min, radius } = method()
   const radians = toRadians(angle)
+
   let x = Math.round(center_x + (radius * Math.cos(-radians)))
   let y = Math.round(center_y + (radius * Math.sin(-radians)))
 
   let diff
-  if (x > 350) {
-    diff = (x - 350) * 2
+  if (x > center_x) {
+    diff = (x - center_x) * 2
     x = x - diff
-  } else if (x < 350) {
-    diff = (350 - x) * 2
+  } else if (x < center_x) {
+    diff = (center_x - x) * 2
     x = x + diff
   }
-  ctx.beginPath();
-  ctx.arc(x, y, point_size, 0, 2 * Math.PI)
-  ctx.fill()
-  ctx.fillText(label, x + 10, y);
+  return { x, y }
 }
 
-function parseDegrees(result) {
+function getCurrentCanvas() {
+  const center_x = svg.clientWidth / 2
+  const center_y = svg.clientHeight / 2
+  const min = Math.min(svg.clientHeight, svg.clientWidth)
+  const radius = (min / 2) * 0.9
+  return { center_x, center_y, min, radius }
+}
+
+function parsePlanetDegrees(result) {
   const posArr = result.position.split(' ')
   return Number(posArr[0])
 }
@@ -92,4 +97,11 @@ function toRadians(degrees) {
   return degrees * (Math.PI / 180)
 }
 
-export { drawChart, drawPlanets }
+function drawElement(type, attrs, text = '') {
+  const newEl = document.createElementNS(svgns, `${type}`)
+  gsap.set(newEl, { attr: { ...attrs } })
+  if (type === 'text') {
+    newEl.append(text)
+  }
+  chartEl.appendChild(newEl)
+}
