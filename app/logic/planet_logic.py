@@ -3,7 +3,7 @@ from app.utils import create_metaclasses
 
 class PlanetLogic:
     def __init__(self):
-        self.planet_classes = create_planet_metaclasses()
+        self.planet_classes = create_metaclasses(_Planet, planet_subclasses)
 
     def get_planets(self):
         try:
@@ -30,6 +30,3 @@ class PlanetLogic:
             'id': planet.id,
             'sign': planet.sign()
         }
-
-def create_planet_metaclasses():
-    return create_metaclasses(_Planet, planet_subclasses)

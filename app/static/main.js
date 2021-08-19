@@ -1,5 +1,8 @@
 import { drawChart, drawPlanets, glyphs } from './canvas.js'
-import Sidenav from './sidenav.js'
+const nav = document.getElementById('sidenav')
+const menuBtn = document.getElementById('menu')
+const closeBtn = document.getElementById('close-btn')
+const Sidenav = createSidenav(nav, menuBtn, closeBtn)
 const PlanetOutputLg = document.getElementById('planet-output')
 const PlanetOutputSm = document.getElementById('planet-output-sm')
 const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
@@ -8,6 +11,7 @@ const baseUrl = window.location.host.includes('astro-clock.com')
   : 'ws://127.0.0.1:8000'
 
 var planetOutput = PlanetOutputLg
+var interval
 var socket
 var loaded = false
 var results = []
@@ -16,7 +20,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.innerWidth <= 900) planetOutput = PlanetOutputSm
   drawChart()
   initSocket()
-  Sidenav.init()
 })
 window.addEventListener('resize', () => {
   if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSm) {
@@ -35,9 +38,34 @@ window.addEventListener('resize', () => {
 function initSocket() {
   const client_id = Date.now()
   socket = new WebSocket(`${baseUrl}/ws/${client_id}`)
-  socket.addEventListener('open', () => { console.log('connected') })
-  socket.addEventListener('message', (event) => { processPlanetData(JSON.parse(event.data)) })
-  socket.addEventListener('close', () => { console.log('disconnected') })
+  socket.addEventListener('open', () => {
+    console.log('connected')
+    requestData()
+  })
+  socket.addEventListener('message', (event) => {
+    processPlanetData(JSON.parse(event.data))
+  })
+  socket.addEventListener('close', () => {
+    console.log('disconnected')
+    listenStop()
+  })
+  listenStart()
+}
+
+function listenStart() {
+  interval = setInterval(requestData, 1000)
+}
+function listenStop() {
+  clearInterval(interval)
+  if ((socket.readyState === 1) || (socket.readyState === 0)) {
+    socket.close()
+  }
+}
+
+async function requestData() {
+  if (socket?.readyState === 1) {
+    await socket.send('requesting data')
+  }
 }
 
 async function processPlanetData(latest) {
@@ -45,30 +73,30 @@ async function processPlanetData(latest) {
     // if latest data is the same as previous, do nothing
     if (JSON.stringify(latest) === JSON.stringify(results)) return
     for (const result of latest) {
-      const planet = planets[result.id]
-      const keys = Object.keys(result).filter(k => k !== 'id' && k !== 'sign')
-      if (!loaded) initPlanetOutput(result, keys, planet)
-      else updatePlanetOutput(result, keys, planet)
+      updatePlanetOutput(result, loaded)
     }
     drawPlanets(latest)
     results = latest
     if (!loaded) loaded = true
   } catch (err) {
     throw err
+    listenStop()
   }
 }
 
-function initPlanetOutput(result, keys, planet) {
-  const str = `<div id="${planet}">
-    ${buildStr(result, keys)}
-  </div>`
-  planetOutput.insertAdjacentHTML('beforeend', str)
-}
-
-function updatePlanetOutput(result, keys, planet) {
-  const el = document.getElementById(`${planet}`)
+function updatePlanetOutput(result, isLoaded) {
+  const planet = planets[result.id]
+  const keys = Object.keys(result).filter(k => k !== 'id' && k !== 'sign')
   const str = buildStr(result, keys)
-  el.innerHTML = str
+  if (!isLoaded) {
+    const div = document.createElement('div')
+    div.setAttribute('id', planet)
+    div.innerHTML = str
+    planetOutput.appendChild(div)
+  } else {
+    const el = document.getElementById(`${planet}`)
+    el.innerHTML = str
+  }
 }
 
 function buildStr(result, keys) {
@@ -78,4 +106,26 @@ function buildStr(result, keys) {
     else return `<span>${result[k]}</span><br>`
   }).join('')}`
   return str
+}
+
+function createSidenav(nav, menuBtn, closeBtn) {
+  class Sidenav {
+    nav = nav
+    menuBtn = menuBtn
+    closeBtn = closeBtn
+    constructor() {
+      this.navOpen = false
+      this.menuBtn.addEventListener('click', () => { this.openNav() })
+      this.closeBtn.addEventListener('click', () => { this.closeNav() })
+    }
+    openNav() {
+      this.nav.style.left = 0
+      this.navOpen = true
+    }
+    closeNav() {
+      this.nav.style.left = '-200px'
+      this.navOpen = false
+    }
+  }
+  return new Sidenav()
 }

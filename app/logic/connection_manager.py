@@ -1,9 +1,9 @@
 import asyncio
 
 class ConnectionManager:
-    def __init__(self, websocket, data_source, client_id):
+    def __init__(self, websocket, get_data, client_id):
         self.websocket = websocket
-        self._get_data = data_source
+        self._get_data = get_data
         self.client_id = client_id
 
     async def __aenter__(self):
@@ -20,18 +20,14 @@ class ConnectionManager:
         finally:
            return True
 
-    async def send_data(self):
-        async for data in self.get_data():
-            await self._send(self.websocket, data)
+    async def receive_data(self):
+        async for message in self.websocket.iter_text():
+            await self.handle_messages(message)
 
-    async def _send(self, websocket, data):
-        return await websocket.send_json(data)
-
-    async def get_data(self):
+    async def handle_messages(self, message):
         try:
-            while True:
-                yield self._get_data()
-                await asyncio.sleep(1)
+            if message == 'requesting data':
+                data = self._get_data()
+                return await self.websocket.send_json(data)
         except Exception as e:
-            print(e)
-            pass
+            raise e
