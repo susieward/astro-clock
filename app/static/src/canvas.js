@@ -3,32 +3,136 @@ const chartEl = document.getElementById('chart-svg')
 const svgns = "http://www.w3.org/2000/svg"
 const signs = ['Aries', 'Taurus', 'Gemini','Cancer','Leo','Virgo', 'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 export const glyphs = ['☉', '☽', '☿', '♀', '♂', '♃', '♄', '♅', '♆', '♇']
+const majorAspects = [
+  { name: 'Conjunction', degrees: 0, color: 'green' },
+  { name: 'Sextile', degrees: 60, color: 'magenta' },
+  { name: 'Square', degrees: 90, color: 'red' },
+  { name: 'Trine', degrees: 120, color: 'blue' },
+  { name: 'Opposition', degrees: 180, color: 'black' }
+]
 var signData = []
+var planetData = {}
 
 export function drawPlanets(data) {
-  drawChart()
+  const asc = data.find(r => r.name === 'Ascendant')
+  drawChart(asc)
   for (const planet of data) {
     const degrees = parsePlanetDegrees(planet)
-    const planetSignData = signData.find(s => s.sign === planet.sign)
-    const { startAngle } = planetSignData
-    const angle = startAngle - degrees
+    const angle = calcPlanetAngle(planet, degrees)
     const str = window.innerWidth <= 900
       ? `${glyphs[planet.id]} ${degrees}°`
       : `${planet.name} (${degrees}°)`
     drawPoint(angle, str)
+    const aspects = getAspects(planet, angle, data)
+    planetData[`${planet.name}`] = { angle, aspects }
+  }
+  drawAspects()
+  /*
+  if (asc) {
+    drawHouses(asc)
+  }
+  */
+}
+
+function drawHouses(asc) {
+// soon
+}
+
+function drawAspects() {
+  const planets = Object.keys(planetData)
+  for (const key of planets) {
+    const planet = planetData[key]
+    if (planet.aspects.length > 0) {
+      const planetA = calcAngleCoords(planet.angle)
+      for (const aspect of planet.aspects) {
+        const planetB = calcAngleCoords(aspect.angleB)
+        drawElement('path', {
+          d: `M ${planetA.x},${planetA.y}, L ${planetB.x},${planetB.y}`,
+          stroke: aspect.color
+        })
+      }
+    }
   }
 }
 
-export function drawChart() {
+function getAspects(planet, angle, data) {
+  let results = []
+  let otherPlanets = data.filter(p => p.id !== planet.id)
+  const orb = (planet.name === 'Sun' || planet.name === 'Moon') ? 10 : 6
+  for (const planetB of otherPlanets) {
+    const degreesB = parsePlanetDegrees(planetB)
+    const angleB = calcPlanetAngle(planetB, degreesB)
+    let diff = getPlanetDiff(angle, angleB)
+    let aspects = calcAspects(diff, orb)
+    if (aspects.length > 0) {
+      results.push({
+        planetB: planetB.name,
+        angleB: angleB,
+        ...aspects[0]
+      })
+    }
+  }
+  return results
+}
+
+function calcAspects(angle, orb) {
+  let aspects = []
+  for (const aspect of majorAspects) {
+    const max = aspect.degrees + orb
+    const min = aspect.degrees - orb
+    if ((angle <= max) && (angle >= min)) {
+      aspects.push(aspect)
+    }
+  }
+  return aspects
+}
+
+function calcPlanetAngle(planet, degrees) {
+  const planetSignData = signData.find(s => s.sign === planet.sign)
+  const { startAngle } = planetSignData
+  const angle = startAngle - degrees
+  return angle
+}
+
+function getPlanetDiff(a, b) {
+  a = Math.abs(a)
+  b = Math.abs(b)
+  a %= 360
+  b %= 360
+  if (a < b) return getPlanetDiff(b, a)
+  else return Math.min(a-b, b-a+360)
+}
+
+export function drawChart(asc = null) {
   chartEl.replaceChildren()
   const { center_x, center_y, min, radius } = getCurrentCanvas()
   drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
+
+  let index = 0
   let startAngle = 0
   let endAngle = 30
+  let sign
   signData = []
-  for(let i = 0; i < signs.length; i++){
-    const sign = signs[i]
-    if (i > 0) {
+
+  if (asc) {
+    const ascSign = signs.find(s => s === asc.sign)
+    index = signs.indexOf(ascSign)
+    const ascDeg = parsePlanetDegrees(asc)
+    startAngle = startAngle + ascDeg
+  }
+
+  while (true) {
+    sign = signs[index]
+    if (!sign) {
+      if (!asc) break
+      if (signData.length < signs.length) {
+        index = 0
+        sign = signs[index]
+      } else {
+        break
+      }
+    }
+    if (signData.length > 0) {
       startAngle = startAngle - 30
       endAngle = endAngle - 30
     }
@@ -46,8 +150,10 @@ export function drawChart() {
       font: '14px Avenir',
       fill: '#f9f9f9'
     }, sign)
-    signData.push({ id: i, sign, startAngle, endAngle })
+    signData.push({ id: index, sign, startAngle, endAngle })
+    index++
   }
+  // console.log(signData)
 }
 
 function drawPoint(angle, label){

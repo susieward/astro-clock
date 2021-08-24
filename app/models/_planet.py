@@ -1,3 +1,6 @@
+# cerridwen Copyright (c) 2014 Leslie P. Polzer <leslie.polzer@gmx.net>
+# https://github.com/skypher/cerridwen
+
 from cerridwen.planets import (
     Planet,
     Sun,

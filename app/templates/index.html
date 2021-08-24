@@ -25,13 +25,23 @@
           </svg>
         </span>
         <h2>Astro Clock</h2>
+        <div id="chart">
+          <input name="date" id="date-input" type="date" value="" />
+          <input name="time" id="time-input" type="time" value="00:00" />
+
+          <div class="loc-container">
+            <input name="place" id="place-input" type="text" value="" placeholder="Search for a city" />
+            <div id="loc-results"></div>
+          </div>
+          <!-- <input name="place" id="place-input" type="text" value="" placeholder="" /> -->
+          <button id="chart-btn">create birth chart</button>
+        </div>
       </div>
       <div id="planet-output"></div>
       <svg id="responsive-svg" xmlns="http://www.w3.org/2000/svg">
         <g id="chart-svg"></g>
       </svg>
     </div>
-    <script type="module" src="../static/canvas.js"></script>
-    <script type="module" src="../static/main.js"></script>
+    <script type="text/javascript" src="../static/dist/main.bundle.js"></script>
   </body>
 </html>

@@ -1,8 +1,6 @@
 import { drawChart, drawPlanets, glyphs } from './canvas.js'
-const nav = document.getElementById('sidenav')
-const menuBtn = document.getElementById('menu')
-const closeBtn = document.getElementById('close-btn')
-const Sidenav = createSidenav(nav, menuBtn, closeBtn)
+import './birthchart.js'
+const Sidenav = createSidenav()
 const PlanetOutputLg = document.getElementById('planet-output')
 const PlanetOutputSm = document.getElementById('planet-output-sm')
 const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
@@ -12,42 +10,49 @@ const baseUrl = window.location.host.includes('astro-clock.com')
 
 var planetOutput = PlanetOutputLg
 var interval
-var socket
+var planetSocket
+var ascSocket
 var loaded = false
 var results = []
+
+export const getPlanetSocket = () => planetSocket
+export const getAscSocket = () => ascSocket
 
 window.addEventListener('DOMContentLoaded', () => {
   if (window.innerWidth <= 900) planetOutput = PlanetOutputSm
   drawChart()
-  initSocket()
+  initSockets()
 })
 window.addEventListener('resize', () => {
   if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSm) {
-    planetOutput.innerHTML = ''
-    planetOutput = PlanetOutputSm
-    loaded = false
+    resetOutput(PlanetOutputSm)
   } else if (window.innerWidth > 900 && planetOutput !== PlanetOutputLg) {
-    planetOutput.innerHTML = ''
-    planetOutput = PlanetOutputLg
-    loaded = false
+    resetOutput(PlanetOutputLg)
     if (Sidenav.navOpen) Sidenav.closeNav()
   }
   if (results.length > 0) drawPlanets(results)
 })
 
-function initSocket() {
+export function clear() {
+  if (interval) clearInterval(interval)
+  planetOutput.innerHTML = ''
+  loaded = false
+  drawChart()
+}
+
+function initSockets() {
   const client_id = Date.now()
-  socket = new WebSocket(`${baseUrl}/ws/${client_id}`)
-  socket.addEventListener('open', () => {
+  planetSocket = new WebSocket(`${baseUrl}/ws/${client_id}`)
+  ascSocket = new WebSocket(`${baseUrl}/ws/asc/${client_id}`)
+  ascSocket.addEventListener('message', processAscData)
+  planetSocket.addEventListener('open', () => {
     console.log('connected')
     requestData()
   })
-  socket.addEventListener('message', (event) => {
-    processPlanetData(JSON.parse(event.data))
-  })
-  socket.addEventListener('close', () => {
+  planetSocket.addEventListener('message', processPlanetData)
+  planetSocket.addEventListener('close', () => {
     console.log('disconnected')
-    listenStop()
+    listenStop(planetSocket)
   })
   listenStart()
 }
@@ -55,25 +60,30 @@ function initSocket() {
 function listenStart() {
   interval = setInterval(requestData, 1000)
 }
-function listenStop() {
+function listenStop(socket) {
   clearInterval(interval)
-  if ((socket.readyState === 1) || (socket.readyState === 0)) {
+  const states = [1, 0]
+  if (socket && states.includes(socket.readyState)) {
     socket.close()
   }
 }
 
-async function requestData() {
-  if (socket?.readyState === 1) {
-    await socket.send('requesting data')
+function requestData() {
+  if (planetSocket && planetSocket.readyState === 1) {
+    planetSocket.send('requesting data')
   }
 }
 
-async function processPlanetData(latest) {
+function processAscData(event) {
+  return processPlanetData(event)
+}
+
+function processPlanetData(event) {
   try {
-    // if latest data is the same as previous, do nothing
+    const latest = JSON.parse(event.data)
     if (JSON.stringify(latest) === JSON.stringify(results)) return
     for (const result of latest) {
-      updatePlanetOutput(result, loaded)
+      updatePlanetOutput(result)
     }
     drawPlanets(latest)
     results = latest
@@ -84,11 +94,16 @@ async function processPlanetData(latest) {
   }
 }
 
-function updatePlanetOutput(result, isLoaded) {
-  const planet = planets[result.id]
-  const keys = Object.keys(result).filter(k => k !== 'id' && k !== 'sign')
+function updatePlanetOutput(result) {
+  const filteredKeys = ['id', 'sign', 'houses']
+  const previous = results.find(r => r.id === result?.id)
+  if (loaded && previous) {
+    if (JSON.stringify(result) === JSON.stringify(previous)) return
+  }
+  const planet = result.hasOwnProperty('id') ? planets[result.id] : 'Ascendant'
+  const keys = Object.keys(result).filter(k => !filteredKeys.includes(k))
   const str = buildStr(result, keys)
-  if (!isLoaded) {
+  if (!loaded) {
     const div = document.createElement('div')
     div.setAttribute('id', planet)
     div.innerHTML = str
@@ -98,21 +113,26 @@ function updatePlanetOutput(result, isLoaded) {
     el.innerHTML = str
   }
 }
+function resetOutput(outputEl) {
+  planetOutput.innerHTML = ''
+  planetOutput = outputEl
+  loaded = false
+}
 
 function buildStr(result, keys) {
   const str = `${keys.map((k, i) => {
-    if (i === 0) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
+    if (i === 0 && result.id) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
     else if (i === keys.length - 1) return `<span>${result[k]}</span>`
     else return `<span>${result[k]}</span><br>`
   }).join('')}`
   return str
 }
 
-function createSidenav(nav, menuBtn, closeBtn) {
+function createSidenav() {
   class Sidenav {
-    nav = nav
-    menuBtn = menuBtn
-    closeBtn = closeBtn
+    nav = document.getElementById('sidenav')
+    menuBtn = document.getElementById('menu')
+    closeBtn = document.getElementById('close-btn')
     constructor() {
       this.navOpen = false
       this.menuBtn.addEventListener('click', () => { this.openNav() })
