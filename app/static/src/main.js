@@ -14,8 +14,8 @@ var planetSocket
 var ascSocket
 var loaded = false
 var results = []
+var birthChartMode = false
 
-export const getPlanetSocket = () => planetSocket
 export const getAscSocket = () => ascSocket
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -29,6 +29,9 @@ window.addEventListener('resize', () => {
   } else if (window.innerWidth > 900 && planetOutput !== PlanetOutputLg) {
     resetOutput(PlanetOutputLg)
     if (Sidenav.navOpen) Sidenav.closeNav()
+  }
+  if (birthChartMode) {
+    return processPlanetData(results)
   }
   if (results.length > 0) drawPlanets(results)
 })
@@ -75,13 +78,16 @@ function requestData() {
 }
 
 function processAscData(event) {
+  birthChartMode = true
   return processPlanetData(event)
 }
 
 function processPlanetData(event) {
   try {
-    const latest = JSON.parse(event.data)
-    if (JSON.stringify(latest) === JSON.stringify(results)) return
+    const latest = Array.isArray(event) ? event : JSON.parse(event.data)
+    if (!birthChartMode && JSON.stringify(latest) === JSON.stringify(results)) {
+      return
+    }
     for (const result of latest) {
       updatePlanetOutput(result)
     }
@@ -96,9 +102,11 @@ function processPlanetData(event) {
 
 function updatePlanetOutput(result) {
   const filteredKeys = ['id', 'sign', 'houses']
-  const previous = results.find(r => r.id === result?.id)
-  if (loaded && previous) {
-    if (JSON.stringify(result) === JSON.stringify(previous)) return
+  if (!birthChartMode) {
+    const previous = results.find(r => r.id === result?.id)
+    if (loaded && previous) {
+      if (JSON.stringify(result) === JSON.stringify(previous)) return
+    }
   }
   const planet = result.hasOwnProperty('id') ? planets[result.id] : 'Ascendant'
   const keys = Object.keys(result).filter(k => !filteredKeys.includes(k))
@@ -121,7 +129,7 @@ function resetOutput(outputEl) {
 
 function buildStr(result, keys) {
   const str = `${keys.map((k, i) => {
-    if (i === 0 && result.id) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
+    if (i === 0 && result.id) return `<span>${result[k]} ${glyphs[result.id] || 'ASC'}</span><br>`
     else if (i === keys.length - 1) return `<span>${result[k]}</span>`
     else return `<span>${result[k]}</span><br>`
   }).join('')}`

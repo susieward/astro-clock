@@ -1,5 +1,5 @@
 import cityTimezones from 'city-timezones'
-import { getPlanetSocket, getAscSocket, clear } from './main'
+import { getAscSocket, clear } from './main'
 const ChartBtn = document.getElementById('chart-btn')
 const DateInput = document.getElementById('date-input')
 const TimeInput = document.getElementById('time-input')
@@ -17,15 +17,12 @@ TimeInput.addEventListener('change', (e) => { timeVal = e.target.value }, false)
 LocationInput.addEventListener('input', handleInput, false)
 
 function handleChart() {
-  //const planetSocket = getPlanetSocket()
   const ascSocket = getAscSocket()
   if (dateVal && timeVal && locationVal) {
     clear()
     const { lat, lng, timezone } = locationVal
     const str = buildDateString(dateVal, timeVal, timezone)
     const payload = JSON.stringify({ long: lng, lat: lat, date: str })
-    console.log('payload', payload)
-    //planetSocket.send(str)
     ascSocket.send(payload)
   } else {
     alert('Please fill out all fields')
@@ -71,15 +68,13 @@ function showResults(data) {
 }
 
 function getResult(el) {
-  console.log(el.innerText)
   const result = {
     lat: Number(el.dataset.lat),
     lng: Number(el.dataset.lng),
     timezone: el.dataset.tmz
   }
-  //console.log('result', result)
   locationVal = result
-  //LocationInput.setAttribute('value', el.innerText)
+  LocationInput.value = el.innerText
   SearchDropdown.replaceChildren()
   SearchDropdown.style.height = 0
   SearchDropdown.style.display = 'none'
