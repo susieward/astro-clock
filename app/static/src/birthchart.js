@@ -24,7 +24,7 @@ LocationInput.addEventListener('input', handleInput)
 
 function handleChart() {
   if (dateVal && timeVal && locationVal) {
-    // console.log(dateVal, timeVal, locationVal)
+    console.log(dateVal, timeVal, locationVal)
     return requestBirthChart(dateVal, timeVal, locationVal)
   } else {
     alert('Please fill out all fields')
@@ -106,7 +106,10 @@ function getResult(el) {
 // Output: string containing ISO-formatted date + UTC time (w/ seconds), no timezone.
 function buildDateString(dateValue, time, timezone) {
   // Create a date to pass to Intl.DateTimeFormat
-  const baseDate = new Date(`${dateValue} ${time}`)
+
+  let str = fixForSafari(`${dateValue} ${time}`)
+  const baseDate = new Date(str)
+  console.log('baseDate', baseDate)
 
   // Obtain short-form timezone code from location input
   // (converting to date twice bc of bug seen on mobile)
@@ -125,4 +128,9 @@ function buildDateString(dateValue, time, timezone) {
   utcStr = utcStr.substr(0, 8)
   const dateString = `${dateValue} ${utcStr}`
   return dateString
+}
+
+function fixForSafari(val) {
+  let v = val.replace(/-/g, "/")
+  return v
 }
