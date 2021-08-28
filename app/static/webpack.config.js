@@ -1,4 +1,5 @@
 const path = require("path")
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   mode: "development",
@@ -6,6 +7,10 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "./dist"),
     filename: "main.bundle.js"
+  },
+  devServer: {
+    port: 8080,
+    hot: true
   },
   module: {
     rules: [
@@ -18,7 +23,16 @@ module.exports = {
             presets: ['@babel/preset-env']
           }
         }
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader']
       }
     ]
-  }
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, "./dev/index.html")
+    })
+  ]
 }

@@ -1,4 +1,6 @@
 from fastapi import WebSocket
+from fastapi.encoders import jsonable_encoder
+from app.api.exceptions import ConnectionException
 
 class ConnectionManager:
     def __init__(self, websocket: WebSocket, on_receive, client_id):
@@ -27,9 +29,10 @@ class ConnectionManager:
     async def handle_json(self, message):
         try:
             response = self._on_receive(message)
-            return await self.websocket.send_json(response)
+            json = jsonable_encoder(response)
+            return await self.websocket.send_json(json)
         except Exception as e:
-            raise e
+            raise ConnectionException(message='Connection Error', exc=e)
 
     async def receive_messages(self):
         async for message in self.websocket.iter_text():
@@ -43,4 +46,4 @@ class ConnectionManager:
             response = self._on_receive(payload)
             return await self.websocket.send_json(response)
         except Exception as e:
-            raise e
+            raise ConnectionException(message='Connection Error', exc=e)

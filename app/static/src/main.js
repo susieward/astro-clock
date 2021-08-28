@@ -1,5 +1,5 @@
-import { drawChart, drawPlanets, glyphs } from './canvas.js'
 import './birthchart.js'
+import { drawChart, drawPlanets, glyphs } from './svg.js'
 const Sidenav = createSidenav()
 const PlanetOutputLg = document.getElementById('planet-output')
 const PlanetOutputSm = document.getElementById('planet-output-sm')
@@ -10,19 +10,17 @@ const baseUrl = window.location.host.includes('astro-clock.com')
 
 var planetOutput = PlanetOutputLg
 var interval
-var planetSocket
-var ascSocket
+var socket
 var loaded = false
 var results = []
 var birthChartMode = false
 
-export const getAscSocket = () => ascSocket
-
 window.addEventListener('DOMContentLoaded', () => {
   if (window.innerWidth <= 900) planetOutput = PlanetOutputSm
   drawChart()
-  initSockets()
+  initSocket()
 })
+
 window.addEventListener('resize', () => {
   if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSm) {
     resetOutput(PlanetOutputSm)
@@ -36,58 +34,59 @@ window.addEventListener('resize', () => {
   if (results.length > 0) drawPlanets(results)
 })
 
+
 export function clear() {
+  console.log('clear called')
+  if (!birthChartMode) {
+    birthChartMode = true
+  }
   if (interval) clearInterval(interval)
   planetOutput.innerHTML = ''
   loaded = false
-  drawChart()
 }
 
-function initSockets() {
-  const client_id = Date.now()
-  planetSocket = new WebSocket(`${baseUrl}/ws/${client_id}`)
-  ascSocket = new WebSocket(`${baseUrl}/ws/asc/${client_id}`)
-  ascSocket.addEventListener('message', processAscData)
-  planetSocket.addEventListener('open', () => {
-    console.log('connected')
-    requestData()
-  })
-  planetSocket.addEventListener('message', processPlanetData)
-  planetSocket.addEventListener('close', () => {
-    console.log('disconnected')
-    listenStop(planetSocket)
-  })
-  listenStart()
+function resetOutput(outputEl) {
+  planetOutput.innerHTML = ''
+  planetOutput = outputEl
+  loaded = false
 }
 
-function listenStart() {
-  interval = setInterval(requestData, 1000)
-}
-function listenStop(socket) {
-  clearInterval(interval)
-  const states = [1, 0]
-  if (socket && states.includes(socket.readyState)) {
-    socket.close()
-  }
-}
-
-function requestData() {
-  if (planetSocket && planetSocket.readyState === 1) {
-    planetSocket.send('requesting data')
-  }
-}
-
-function processAscData(event) {
-  birthChartMode = true
-  return processPlanetData(event)
-}
-
-function processPlanetData(event) {
+function initSocket() {
   try {
-    const latest = Array.isArray(event) ? event : JSON.parse(event.data)
-    if (!birthChartMode && JSON.stringify(latest) === JSON.stringify(results)) {
-      return
+    const client_id = Date.now()
+    socket = new WebSocket(`${baseUrl}/ws/${client_id}`)
+    socket.addEventListener('open', () => {
+      console.log('connected')
+      requestData()
+    })
+    socket.addEventListener('message', (e) => {
+      processPlanetData(JSON.parse(e.data))
+    })
+    socket.addEventListener('close', () => {
+      console.log('disconnected')
+      listenStop()
+    })
+    listenStart()
+  } catch(err) {
+    throw err
+  }
+}
+
+export function requestData(payload = null) {
+  try {
+    if (!payload) payload = JSON.stringify({ date: getCurrentDateString() })
+    if (socket?.readyState === 1) {
+      socket.send(payload)
     }
+  } catch(err) {
+    console.log('requestData err', err)
+    throw err
+  }
+}
+
+function processPlanetData(latest) {
+  try {
+    if (!birthChartMode && JSON.stringify(latest) === JSON.stringify(results)) return
     for (const result of latest) {
       updatePlanetOutput(result)
     }
@@ -95,6 +94,7 @@ function processPlanetData(event) {
     results = latest
     if (!loaded) loaded = true
   } catch (err) {
+    console.log('processPlanetData err: ', err)
     throw err
     listenStop()
   }
@@ -121,19 +121,38 @@ function updatePlanetOutput(result) {
     el.innerHTML = str
   }
 }
-function resetOutput(outputEl) {
-  planetOutput.innerHTML = ''
-  planetOutput = outputEl
-  loaded = false
-}
 
 function buildStr(result, keys) {
   const str = `${keys.map((k, i) => {
-    if (i === 0 && result.id) return `<span>${result[k]} ${glyphs[result.id] || 'ASC'}</span><br>`
+    if (i === 0 && result.hasOwnProperty('id')) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
     else if (i === keys.length - 1) return `<span>${result[k]}</span>`
     else return `<span>${result[k]}</span><br>`
   }).join('')}`
   return str
+}
+
+function listenStart() {
+  interval = setInterval(requestData, 1000)
+  console.log('listen started')
+}
+
+function listenStop() {
+  clearInterval(interval)
+  const states = [1, 0]
+  if (socket && states.includes(socket.readyState)) {
+    console.log('closing socket')
+    socket.close()
+  }
+  console.log('listen stopped')
+}
+
+function getCurrentDateString() {
+  const date = new Date()
+  const isoStr = date.toISOString().substr(0, 10)
+  let utcStr = date.toUTCString().substr(-12)
+  utcStr = utcStr.substr(0, 8)
+  const dateString = `${isoStr} ${utcStr}`
+  return dateString
 }
 
 function createSidenav() {

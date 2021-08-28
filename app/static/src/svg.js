@@ -20,21 +20,20 @@ export function drawPlanets(data) {
     const degrees = parsePlanetDegrees(planet)
     const angle = calcPlanetAngle(planet, degrees)
     const str = window.innerWidth <= 900
-      ? `${glyphs[planet.id]} ${degrees}°`
+      ? `${planet.hasOwnProperty('id') ? glyphs[planet.id] : 'ASC'} ${degrees}°`
       : `${planet.name} (${degrees}°)`
-    drawPoint(angle, str)
+    drawPoint(angle, str, asc)
     const aspects = getAspects(planet, angle, data)
     planetData[`${planet.name}`] = { angle, aspects }
   }
   drawAspects()
-  /*
   if (asc) {
     drawHouses(asc)
   }
-  */
 }
 
 function drawHouses(asc) {
+  console.log(asc.houses)
 // soon
 }
 
@@ -46,7 +45,7 @@ function drawAspects() {
       const planetA = calcAngleCoords(planet.angle)
       for (const aspect of planet.aspects) {
         const planetB = calcAngleCoords(aspect.angleB)
-        drawElement('path', {
+        drawSVG('path', {
           d: `M ${planetA.x},${planetA.y}, L ${planetB.x},${planetB.y}`,
           stroke: aspect.color
         })
@@ -105,8 +104,8 @@ function getPlanetDiff(a, b) {
 
 export function drawChart(asc = null) {
   chartEl.replaceChildren()
-  const { center_x, center_y, min, radius } = getCurrentCanvas()
-  drawElement('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
+  const { center_x, center_y, min, radius } = getCurrentDimensions()
+  drawSVG('circle', { cy: center_y, cx: center_x, r: radius, fill: 'transparent', stroke: '#f9f9f9', 'stroke-width': 1, cursor: 'pointer' })
 
   let index = 0
   let startAngle = 0
@@ -137,14 +136,14 @@ export function drawChart(asc = null) {
       endAngle = endAngle - 30
     }
     const { x, y } = calcAngleCoords(startAngle)
-    drawElement('path', {
+    drawSVG('path', {
       d: `M ${center_x},${center_y}, L ${x},${y}`,
       stroke: '#f9f9f9'
     })
     const mid = startAngle - 15
-    const method = () => ({ center_x, center_y, radius: (radius * 0.7), min })
-    const midCoords = calcAngleCoords(mid, method)
-    drawElement('text', {
+    const data = { center_x, center_y, radius: (radius * 0.7), min }
+    const midCoords = calcAngleCoords(mid, data)
+    drawSVG('text', {
       x: midCoords.x - 30,
       y: midCoords.y,
       font: '14px Avenir',
@@ -156,28 +155,49 @@ export function drawChart(asc = null) {
   // console.log(signData)
 }
 
-function drawPoint(angle, label){
+function drawPoint(angle, label, asc){
   let { x, y } = calcAngleCoords(angle)
-  drawElement('circle', { cy: y, cx: x, r: 4, fill: '#f9f9f9', cursor: 'pointer' })
-  if (angle > -180 && angle > -90) {
-    if (window.innerWidth <= 900) x = x - 60
-    else x = x - 100
-  } else if (angle < -180 && angle < -270) {
-    if (window.innerWidth <= 900) {
-      x = x - 40
-      y = y - 10
-    } else {
-      x = x - 60
-      y = y - 12
-    }
-  } else {
-    x = x + 10
-  }
-  drawElement('text', { x, y, font: '14px Avenir', fill: '#f9f9f9' }, label)
+  angle = Math.abs(angle)
+  drawSVG('circle', { cy: y, cx: x, r: 4, fill: '#f9f9f9', cursor: 'pointer' })
+
+  const textCoords = calcTextCoords(angle, x, y)
+  x = textCoords.x
+  y = textCoords.y
+
+  drawSVG('text', { x, y, font: '14px Avenir', fill: '#f9f9f9' }, label)
 }
 
-function calcAngleCoords(angle, method = getCurrentCanvas) {
-  const { center_x, center_y, min, radius } = method()
+function calcTextCoords(angle, x, y) {
+  let xDiff, yDiff
+  if (angle < 180 && angle < 90) {
+    if (angle > 45) {
+      xDiff = (window.innerWidth <= 900) ? 30 : 60
+      x = x - xDiff
+      y = y + 20
+    } else {
+      xDiff = (window.innerWidth <= 900) ? 60 : 100
+      x = x - xDiff
+    }
+  } else if (angle < 180 && angle > 90) {
+    x = x + 10
+    if (angle < 135) {
+      y = y + 15
+    }
+  } else if (angle > 180 && angle < 270) {
+    x = x + 10
+  } else if (angle > 180 && angle > 270) {
+    xDiff = (window.innerWidth <= 900) ? 40 : 60
+    yDiff = (window.innerWidth <= 900) ? 10 : 12
+    x = x - xDiff
+    y = y - yDiff
+  }
+  return { x, y }
+}
+
+
+function calcAngleCoords(angle, data = null) {
+  if (!data) data = getCurrentDimensions()
+  const { center_x, center_y, min, radius } = data
   const radians = toRadians(angle)
 
   let x = Math.round(center_x + (radius * Math.cos(-radians)))
@@ -194,7 +214,7 @@ function calcAngleCoords(angle, method = getCurrentCanvas) {
   return { x, y }
 }
 
-function getCurrentCanvas() {
+function getCurrentDimensions() {
   const center_x = svg.clientWidth / 2
   const center_y = svg.clientHeight / 2
   const min = Math.min(svg.clientHeight, svg.clientWidth)
@@ -213,7 +233,7 @@ function toRadians(degrees) {
   return degrees * (Math.PI / 180)
 }
 
-function drawElement(type, attrs, text = '') {
+function drawSVG(type, attrs, text = '') {
   const newEl = document.createElementNS(svgns, `${type}`)
   gsap.set(newEl, { attr: { ...attrs } })
   if (type === 'text') newEl.append(text)

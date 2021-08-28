@@ -15,16 +15,4 @@ async def socket(
     on_receive = planet_logic.get_planets
 
     async with ConnectionManager(websocket, on_receive, client_id) as connection:
-        await connection.receive_messages()
-
-
-@router.websocket("/ws/asc/{client_id}")
-async def asc_socket(
-    websocket: WebSocket,
-    client_id: str,
-    planet_logic: PlanetLogic = Depends(planet_logic_dependency)
-):
-    on_receive = planet_logic.get_planets_and_ascendant
-
-    async with ConnectionManager(websocket, on_receive, client_id) as connection:
         await connection.receive_json()

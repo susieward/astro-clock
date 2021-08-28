@@ -1,31 +1,47 @@
 import cityTimezones from 'city-timezones'
-import { getAscSocket, clear } from './main'
+import { requestData, clear } from './main.js'
 const ChartBtn = document.getElementById('chart-btn')
 const DateInput = document.getElementById('date-input')
 const TimeInput = document.getElementById('time-input')
 const LocationInput = document.getElementById('place-input')
 const SearchDropdown = document.getElementById('loc-results')
 
+DateInput.value = new Date().toISOString().substr(0, 10)
+
 var timeout
-var dateVal = null
+var dateVal = DateInput.value
 var timeVal = TimeInput.value
 var locationVal = null
 
 ChartBtn.addEventListener('click', handleChart)
-DateInput.addEventListener('change', (e) => { dateVal = e.target.value }, false)
-TimeInput.addEventListener('change', (e) => { timeVal = e.target.value }, false)
-LocationInput.addEventListener('input', handleInput, false)
+DateInput.addEventListener('change', (e) => {
+  dateVal = e.target.value
+})
+TimeInput.addEventListener('change', (e) => {
+  timeVal = e.target.value
+})
+LocationInput.addEventListener('input', handleInput)
 
 function handleChart() {
-  const ascSocket = getAscSocket()
   if (dateVal && timeVal && locationVal) {
+    console.log(dateVal, timeVal, locationVal)
+    return requestBirthChart()
+  } else {
+    alert('Please fill out all fields')
+  }
+}
+
+function requestBirthChart() {
+  try {
     clear()
     const { lat, lng, timezone } = locationVal
     const str = buildDateString(dateVal, timeVal, timezone)
     const payload = JSON.stringify({ long: lng, lat: lat, date: str })
-    ascSocket.send(payload)
-  } else {
-    alert('Please fill out all fields')
+    console.log('requestBirthChart payload', payload)
+    requestData(payload)
+  } catch(err) {
+    console.log('requestBirthChart err', err)
+    throw err
   }
 }
 
