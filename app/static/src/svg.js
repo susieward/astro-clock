@@ -27,13 +27,14 @@ export function drawPlanets(data) {
     planetData[`${planet.name}`] = { angle, aspects }
   }
   drawAspects()
+  /*
   if (asc) {
     drawHouses(asc)
   }
+  */
 }
 
 function drawHouses(asc) {
-  console.log(asc.houses)
 // soon
 }
 

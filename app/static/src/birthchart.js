@@ -24,14 +24,14 @@ LocationInput.addEventListener('input', handleInput)
 
 function handleChart() {
   if (dateVal && timeVal && locationVal) {
-    console.log(dateVal, timeVal, locationVal)
-    return requestBirthChart()
+    // console.log(dateVal, timeVal, locationVal)
+    return requestBirthChart(dateVal, timeVal, locationVal)
   } else {
     alert('Please fill out all fields')
   }
 }
 
-function requestBirthChart() {
+function requestBirthChart(dateVal, timeVal, locationVal) {
   try {
     clear()
     const { lat, lng, timezone } = locationVal
@@ -52,6 +52,7 @@ function handleInput(e) {
   if (timeout) {
     clearTimeout(timeout)
   }
+  // add debounce to search
   timeout = setTimeout(() => {
     showResults(data)
   }, 300)
@@ -59,10 +60,13 @@ function handleInput(e) {
 
 function showResults(data) {
   let results = cityTimezones.findFromCityStateProvince(data)
+
   if (results && results.length > 0) {
     let resultsInUS = results.filter(r => r.iso2 === 'US')
     let rest = results.filter(r => r.iso2 !== 'US')
     results = [...resultsInUS, ...rest]
+
+    // construct dynamic search dropdown with scrollable results
     SearchDropdown.style.display = 'block'
     SearchDropdown.style.height = 'auto'
     SearchDropdown.style.width = "100%"
@@ -71,9 +75,10 @@ function showResults(data) {
       let text = r.iso2 === 'US'
         ? `${r.city}, ${r.state_ansi}`
         : `${r.city}, ${r.country}`
+        // embed search result data in element dataset attributes
       return (`<span class="result" data-lat="${r.lat}" data-lng="${r.lng}" data-tmz="${r.timezone}">${text}</span>`)
     }).join('')}`
-
+    // attach event listeners to individual result elements to capture user selection
     const resultEls = document.querySelectorAll('.result')
     for (const el of resultEls) {
       el.addEventListener('click', (e) => {
@@ -90,21 +95,34 @@ function getResult(el) {
     timezone: el.dataset.tmz
   }
   locationVal = result
+  // show selection in input field
   LocationInput.value = el.innerText
+  // finally, hide dropdown
   SearchDropdown.replaceChildren()
   SearchDropdown.style.height = 0
   SearchDropdown.style.display = 'none'
 }
 
-function buildDateString(dateVal, timeVal, timeZoneVal) {
-  const baseDate = new Date(`${dateVal} ${timeVal}`)
+// Output: string containing ISO-formatted date + UTC time (w/ seconds), no timezone.
+function buildDateString(dateValue, time, timezone) {
+  // Create a date to pass to Intl.DateTimeFormat
+  const baseDate = new Date(`${dateValue} ${time}`)
+
+  // Obtain short-form timezone code from location input
+  // (converting to date twice bc of bug seen on mobile)
   const tmz = new Intl.DateTimeFormat('en-US', {
-    timeZone: timeZoneVal,
+    timeZone: timezone,
     timeZoneName: 'short'
-  }).format(baseDate).split(', ')[1]
-  const date = new Date(`${dateVal} ${timeVal}:00 ${tmz}`)
-  let utcStr = date.toUTCString().substr(-12)
+  }).format(new Date(baseDate)).split(', ')[1]
+
+  // This is essentially a workaround for how bonkers javascript's Date is:
+  // Construct new date object from string containing the correct timezone code.
+  // This way, when the new date object gets converted into the client's local timezone,
+  // it will maintain its accuracy when converted into a UTC string.
+  const withTmz = `${dateValue} ${time}:00 ${tmz}`
+  const dateWithTmz = new Date(withTmz)
+  let utcStr = dateWithTmz.toUTCString().substr(-12)
   utcStr = utcStr.substr(0, 8)
-  const dateString = `${dateVal} ${utcStr}`
+  const dateString = `${dateValue} ${utcStr}`
   return dateString
 }

@@ -1,3 +1,4 @@
+// import './main.css'
 import './birthchart.js'
 import { drawChart, drawPlanets, glyphs } from './svg.js'
 const Sidenav = createSidenav()
