@@ -24,7 +24,6 @@ LocationInput.addEventListener('input', handleInput)
 
 function handleChart() {
   if (dateVal && timeVal && locationVal) {
-    console.log(dateVal, timeVal, locationVal)
     return requestBirthChart(dateVal, timeVal, locationVal)
   } else {
     alert('Please fill out all fields')
@@ -37,7 +36,6 @@ function requestBirthChart(dateVal, timeVal, locationVal) {
     const { lat, lng, timezone } = locationVal
     const str = buildDateString(dateVal, timeVal, timezone)
     const payload = JSON.stringify({ long: lng, lat: lat, date: str })
-    console.log('requestBirthChart payload', payload)
     requestData(payload)
   } catch(err) {
     console.log('requestBirthChart err', err)
@@ -106,24 +104,21 @@ function getResult(el) {
 // Output: string containing ISO-formatted date + UTC time (w/ seconds), no timezone.
 function buildDateString(dateValue, time, timezone) {
   // Create a date to pass to Intl.DateTimeFormat
-
   let str = fixForSafari(`${dateValue} ${time}`)
-  const baseDate = new Date(str)
-  console.log('baseDate', baseDate)
 
   // Obtain short-form timezone code from location input
-  // (converting to date twice bc of bug seen on mobile)
   const tmz = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     timeZoneName: 'short'
-  }).format(new Date(baseDate)).split(', ')[1]
+  }).format(new Date(str)).split(', ')[1]
 
   // This is essentially a workaround for how bonkers javascript's Date is:
   // Construct new date object from string containing the correct timezone code.
-  // This way, when the new date object gets converted into the client's local timezone,
+  // When the output inevitably gets converted into the client's local timezone,
   // it will maintain its accuracy when converted into a UTC string.
-  const withTmz = `${dateValue} ${time}:00 ${tmz}`
+  const withTmz = fixForSafari(`${dateValue} ${time}:00 ${tmz}`)
   const dateWithTmz = new Date(withTmz)
+
   let utcStr = dateWithTmz.toUTCString().substr(-12)
   utcStr = utcStr.substr(0, 8)
   const dateString = `${dateValue} ${utcStr}`
@@ -131,6 +126,9 @@ function buildDateString(dateValue, time, timezone) {
 }
 
 function fixForSafari(val) {
+  // Safari's rendering engine doesn't accept hyphen-separated date strings.
+  // On iOS, *every* mobile browser uses this rendering engine, so here we are.
+  // As if javascript's Date weren't terrible enough.
   let v = val.replace(/-/g, "/")
   return v
 }

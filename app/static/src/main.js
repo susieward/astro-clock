@@ -37,7 +37,6 @@ window.addEventListener('resize', () => {
 
 
 export function clear() {
-  console.log('clear called')
   if (!birthChartMode) {
     birthChartMode = true
   }
