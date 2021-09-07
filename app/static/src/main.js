@@ -1,6 +1,6 @@
 // import './main.css'
-import './birthchart.js'
 import { drawChart, drawPlanets, glyphs } from './svg.js'
+import { getCurrentDateString } from './birthchart.js'
 const Sidenav = createSidenav()
 const PlanetOutputLg = document.getElementById('planet-output')
 const PlanetOutputSm = document.getElementById('planet-output-sm')
@@ -9,6 +9,7 @@ const baseUrl = window.location.host.includes('astro-clock.com')
   ? 'wss://astro-clock.com'
   : 'ws://127.0.0.1:8000'
 
+const minWidthSmall = 950
 var planetOutput = PlanetOutputLg
 var interval
 var socket
@@ -17,15 +18,15 @@ var results = []
 var birthChartMode = false
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (window.innerWidth <= 900) planetOutput = PlanetOutputSm
+  if (window.innerWidth <= minWidthSmall) planetOutput = PlanetOutputSm
   drawChart()
   initSocket()
 })
 
 window.addEventListener('resize', () => {
-  if (window.innerWidth <= 900 && planetOutput !== PlanetOutputSm) {
+  if (window.innerWidth <= minWidthSmall && planetOutput !== PlanetOutputSm) {
     resetOutput(PlanetOutputSm)
-  } else if (window.innerWidth > 900 && planetOutput !== PlanetOutputLg) {
+  } else if (window.innerWidth > minWidthSmall && planetOutput !== PlanetOutputLg) {
     resetOutput(PlanetOutputLg)
     if (Sidenav.navOpen) Sidenav.closeNav()
   }
@@ -60,7 +61,7 @@ function initSocket() {
       requestData()
     })
     socket.addEventListener('message', (e) => {
-      processPlanetData(JSON.parse(e.data))
+      handleMessage(e.data)
     })
     socket.addEventListener('close', () => {
       console.log('disconnected')
@@ -84,6 +85,17 @@ export function requestData(payload = null) {
   }
 }
 
+function handleMessage(data) {
+  data = JSON.parse(data)
+  if (data.error) {
+    console.log('Received error: ', data.exc_value)
+    console.log(data.traceback)
+    listenStop()
+    return
+  }
+  return processPlanetData(data)
+}
+
 function processPlanetData(latest) {
   try {
     if (!birthChartMode && JSON.stringify(latest) === JSON.stringify(results)) return
@@ -101,7 +113,7 @@ function processPlanetData(latest) {
 }
 
 function updatePlanetOutput(result) {
-  const filteredKeys = ['id', 'sign', 'houses']
+  const filteredKeys = ['id', 'sign', 'houses', 'deg', 'position_formatted', 'phase', 'dignity']
   if (!birthChartMode) {
     const previous = results.find(r => r.id === result?.id)
     if (loaded && previous) {
@@ -109,11 +121,12 @@ function updatePlanetOutput(result) {
     }
   }
   const planet = result.hasOwnProperty('id') ? planets[result.id] : 'Ascendant'
-  const keys = Object.keys(result).filter(k => !filteredKeys.includes(k))
+  const keys = Object.keys(result).filter(k => (result[k] && !filteredKeys.includes(k)))
   const str = buildStr(result, keys)
   if (!loaded) {
     const div = document.createElement('div')
     div.setAttribute('id', planet)
+    div.setAttribute('class', 'planet')
     div.innerHTML = str
     planetOutput.appendChild(div)
   } else {
@@ -124,15 +137,23 @@ function updatePlanetOutput(result) {
 
 function buildStr(result, keys) {
   const str = `${keys.map((k, i) => {
-    if (i === 0 && result.hasOwnProperty('id')) return `<span>${result[k]} ${glyphs[result.id]}</span><br>`
-    else if (i === keys.length - 1) return `<span>${result[k]}</span>`
-    else return `<span>${result[k]}</span><br>`
+    let content = `<span>${result[k]}</span>`
+
+    if (i === 0 && result.hasOwnProperty('id')) {
+      content = `<span>${result[k]} ${glyphs[result.id]}</span>`
+    }
+    /*
+    if (k === 'dignity') {
+      content = `<span><em>(${result[k]})</em></span>`
+    }
+    */
+    return content
   }).join('')}`
   return str
 }
 
 function listenStart() {
-  interval = setInterval(requestData, 1000)
+  interval = setInterval(requestData, 900)
   console.log('listen started')
 }
 
@@ -144,15 +165,6 @@ function listenStop() {
     socket.close()
   }
   console.log('listen stopped')
-}
-
-function getCurrentDateString() {
-  const date = new Date()
-  const isoStr = date.toISOString().substr(0, 10)
-  let utcStr = date.toUTCString().substr(-12)
-  utcStr = utcStr.substr(0, 8)
-  const dateString = `${isoStr} ${utcStr}`
-  return dateString
 }
 
 function createSidenav() {

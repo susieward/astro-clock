@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="../static/src/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
     <title>Astro Clock</title>
   </head>
@@ -14,7 +13,7 @@
       <div id="planet-output-sm"></div>
     </aside>
     <div id="app">
-      <div class="header">
+      <header class="header">
         <span id="menu">
           <svg id="menu-icon" viewBox="0 0 120 120" width="60px" height="50px">
             <g>
@@ -24,22 +23,29 @@
             </g>
           </svg>
         </span>
-        <h2>Astro Clock</h2>
-        <div id="chart">
-          <input name="date" id="date-input" type="date" value="" />
-          <input name="time" id="time-input" type="time" value="00:00" />
-
-          <div class="loc-container">
-            <input name="place" id="place-input" type="text" value="" placeholder="Search for a city" />
-            <div id="loc-results"></div>
-          </div>
-          <button id="chart-btn">create birth chart</button>
+        <div class="title">
+          <h2>Astro Clock</h2>
         </div>
-      </div>
-      <div id="planet-output"></div>
-      <svg id="responsive-svg" xmlns="http://www.w3.org/2000/svg">
-        <g id="chart-svg"></g>
-      </svg>
+        <div class="header-left">
+          <div id="chart-inputs">
+            <input name="date" id="date-input" type="date" value="" />
+            <input name="time" id="time-input" type="time" value="" />
+            <div class="loc-container">
+              <input name="place" id="place-input" type="text" value="" placeholder="Search for a city" />
+              <div id="loc-results"></div>
+            </div>
+            <button id="chart-btn">create birth chart</button>
+          </div>
+        </div>
+      </header>
+      <main class="content">
+        <div id="planet-output"></div>
+        <svg id="responsive-svg" xmlns="http://www.w3.org/2000/svg">
+          <g id="chart-svg"></g>
+        </svg>
+        <div id="chart-details">
+        </div>
+      </main>
     </div>
     <script type="text/javascript" src="../static/dist/main.bundle.js"></script>
   </body>

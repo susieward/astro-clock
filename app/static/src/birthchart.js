@@ -6,12 +6,24 @@ const TimeInput = document.getElementById('time-input')
 const LocationInput = document.getElementById('place-input')
 const SearchDropdown = document.getElementById('loc-results')
 
-DateInput.value = new Date().toISOString().substr(0, 10)
-
 var timeout
-var dateVal = DateInput.value
-var timeVal = TimeInput.value
+var dateVal
+var timeVal
 var locationVal = null
+
+setDateTime()
+
+function setDateTime() {
+  let today = new Date()
+  let date = today.toISOString().substring(0, 10)
+  let time = today.toTimeString().substring(0, 5)
+
+  DateInput.value = date
+  TimeInput.value = time
+
+  dateVal = date
+  timeVal = time
+}
 
 ChartBtn.addEventListener('click', handleChart)
 DateInput.addEventListener('change', (e) => {
@@ -128,7 +140,15 @@ function buildDateString(dateValue, time, timezone) {
 function fixForSafari(val) {
   // Safari's rendering engine doesn't accept hyphen-separated date strings.
   // On iOS, *every* mobile browser uses this rendering engine, so here we are.
-  // As if javascript's Date weren't terrible enough.
   let v = val.replace(/-/g, "/")
   return v
+}
+
+export function getCurrentDateString() {
+  const date = new Date()
+  const isoStr = date.toISOString().substr(0, 10)
+  let utcStr = date.toUTCString().substr(-12)
+  utcStr = utcStr.substr(0, 8)
+  const dateString = `${isoStr} ${utcStr}`
+  return dateString
 }

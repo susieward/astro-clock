@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from cerridwen.utils import iso2jd
 
 from app.api.exceptions import PlanetLogicException
@@ -7,17 +7,21 @@ from app.models.data import PlanetData
 
 
 class PlanetLogic:
-    def __init__(self, planet_classes, asc_logic: AscendantLogic):
+    def __init__(self, planet_classes, asc_logic: AscendantLogic) -> None:
         self._planet_classes = planet_classes
         self._asc_logic = asc_logic
 
-    def get_planets(self, data: Dict):
+    def get_planets(self, data: Dict) -> List:
         try:
             date = data.get('date') or None
             long = data.get('long') or None
             lat = data.get('lat') or None
+
+            if date is not None:
+                date = iso2jd(date)
+
             planets = self.init_planets(date)
-            results = [self.build_planet_data(p) for p in planets]
+            results = [self.get_planet_data(planet, jd=date) for planet in planets]
 
             if long and lat:
                 asc = self._asc_logic.get_ascendant(data)
@@ -27,25 +31,39 @@ class PlanetLogic:
         except Exception as e:
             raise PlanetLogicException(message='PlanetLogic error', exc=e)
 
-    def init_planets(self, date = None):
-        if date is not None: date = iso2jd(date)
-        return [planet.__call__(planet_id=i, jd=date) for i, planet in enumerate(self._planet_classes)]
+    def init_planets(self, date) -> List:
+        planets = [self._planet_classes[i].__call__(planet_id=i, jd=date) for i, planet in enumerate(self._planet_classes)]
+        return planets
 
-    def get_planet(self, id, date = None):
-        if date is not None: date = iso2jd(date)
-        try:
-            planet = self._planet_classes[id].__call__(planet_id=id, jd=date)
-            return self.build_planet_data(planet)
-        except IndexError:
-            return None
-        except Exception as e:
-            raise PlanetLogicException(message='PlanetLogic error', exc=e)
+    def get_planet_data(self, planet, jd) -> PlanetData:
+        name = planet.name()
+        position = planet.position_str()
+        position_formatted = planet.position_formatted()
+        id = planet.id
+        sign = planet.sign()
+        deg = planet.degrees()
+        phase_val = None
+        dignity = None
 
-    def build_planet_data(self, planet):
-        planet_dict = {
-            'name': planet.name(),
-            'position': planet.pos(),
-            'id': planet.id,
-            'sign': planet.sign()
-        }
-        return PlanetData(**planet_dict)
+        if 'dignity' in planet.__class__.__dict__.keys():
+            dignity = planet.dignity(jd=jd)
+
+        if name == 'Moon':
+            current_phase = planet.phase(jd=jd)
+            trend, shape, quarter, quarter_english = current_phase
+            phase_val = f'{trend} {shape}'
+
+            if quarter_english is not None:
+                phase_val = f'{phase_val} {quarter_english}'
+
+        planet_data = PlanetData(
+            name=name,
+            position=position,
+            position_formatted=position_formatted,
+            id=id,
+            sign=sign,
+            deg=deg,
+            phase=phase_val,
+            dignity=dignity
+        )
+        return planet_data

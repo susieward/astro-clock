@@ -1,12 +1,14 @@
+import sys
+import traceback
 from fastapi import WebSocket
 from fastapi.encoders import jsonable_encoder
-from app.api.exceptions import ConnectionException
+from app.api.exceptions import ConnectionException, PlanetLogicException
 
 class ConnectionManager:
-    def __init__(self, websocket: WebSocket, on_receive, client_id):
+    def __init__(self, websocket: WebSocket, on_receive, data_exc):
         self.websocket = websocket
         self._on_receive = on_receive
-        self.client_id = client_id
+        self._data_exc = data_exc
 
     async def __aenter__(self):
         await self.websocket.accept()
@@ -31,19 +33,17 @@ class ConnectionManager:
             response = self._on_receive(message)
             json = jsonable_encoder(response)
             return await self.websocket.send_json(json)
-        except Exception as e:
-            raise ConnectionException(message='Connection Error', exc=e)
-
-    async def receive_messages(self):
-        async for message in self.websocket.iter_text():
-            await self.handle_messages(message)
-
-    async def handle_messages(self, message):
-        try:
-            payload = None
-            if message != 'requesting data':
-                payload = message
-            response = self._on_receive(payload)
-            return await self.websocket.send_json(response)
+        except PlanetLogicException as e:
+            print(e)
+            traceback.print_exc()
+            exc_type, exc_value, tb = sys.exc_info()
+            data = {
+                'error': True,
+                'exc_type': str(exc_type),
+                'exc_value': str(exc_value),
+                'traceback': traceback.format_exc()
+            }
+            err_json = jsonable_encoder(data)
+            return await self.websocket.send_json(err_json)
         except Exception as e:
             raise ConnectionException(message='Connection Error', exc=e)
