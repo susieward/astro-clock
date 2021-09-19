@@ -1,10 +1,10 @@
+import json
 from typing import Dict, List
 from cerridwen.utils import iso2jd
-
 from app.api.exceptions import PlanetLogicException
-from app.logic.ascendant_logic import AscendantLogic
+from app.logic.ascendant import AscendantLogic
 from app.models.data import PlanetData
-
+from app.utils import glyphs
 
 class PlanetLogic:
     def __init__(self, planet_classes, asc_logic: AscendantLogic) -> None:
@@ -37,11 +37,9 @@ class PlanetLogic:
 
     def get_planet_data(self, planet, jd) -> PlanetData:
         name = planet.name()
-        position = planet.position_str()
-        position_formatted = planet.position_formatted()
-        id = planet.id
-        sign = planet.sign()
-        deg = planet.degrees()
+        degrees = planet.degrees()
+        label = f'{name} ({degrees}°)'
+        label_sm = f'{glyphs[planet.id]} {degrees}°'
         phase_val = None
         dignity = None
 
@@ -58,11 +56,13 @@ class PlanetLogic:
 
         planet_data = PlanetData(
             name=name,
-            position=position,
-            position_formatted=position_formatted,
-            id=id,
-            sign=sign,
-            deg=deg,
+            position=planet.position_str(),
+            position_formatted=planet.position_formatted(),
+            id=planet.id,
+            label=label,
+            label_sm=label_sm,
+            sign=planet.sign(),
+            deg=degrees,
             phase=phase_val,
             dignity=dignity
         )

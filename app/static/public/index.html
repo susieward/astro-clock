@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="main.css" />
     <title>Astro Clock</title>
   </head>
   <body>
@@ -27,14 +28,18 @@
           <h2>Astro Clock</h2>
         </div>
         <div class="header-left">
-          <div id="chart-inputs">
-            <input name="date" id="date-input" type="date" value="" />
-            <input name="time" id="time-input" type="time" value="" />
-            <div class="loc-container">
-              <input name="place" id="place-input" type="text" value="" placeholder="Search for a city" />
-              <div id="loc-results"></div>
+          <button class="app-btn" id="new-chart">create new chart</button>
+          <div id="chart-input-container">
+            <div id="input-close-btn">x</div>
+            <div id="chart-inputs">
+              <input name="date" id="date-input" type="date" value="" />
+              <input name="time" id="time-input" type="time" value="" />
+              <div class="loc-container">
+                <input name="place" id="place-input" type="text" value="" placeholder="Search for a city" />
+                <div id="loc-results"></div>
+              </div>
+              <button class="app-btn" id="chart-btn">create chart</button>
             </div>
-            <button id="chart-btn">create birth chart</button>
           </div>
         </div>
       </header>
@@ -43,9 +48,11 @@
         <svg id="responsive-svg" xmlns="http://www.w3.org/2000/svg">
           <g id="chart-svg"></g>
         </svg>
-        <div id="chart-details">
+        <div id="chart-details-container">
+          <div id="chart-details"></div>
         </div>
       </main>
+      <div id="mode">☾</div>
     </div>
   </body>
 </html>

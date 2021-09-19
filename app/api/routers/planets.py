@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException, WebSocket
-from app.logic.planet_logic import PlanetLogic
+from app.logic.planet import PlanetLogic
 
 router = APIRouter()
 planet_logic = PlanetLogic()

@@ -1,9 +1,9 @@
 # cerridwen Copyright (c) 2014 Leslie P. Polzer <leslie.polzer@gmx.net>
 # https://github.com/skypher/cerridwen
-from cerridwen.planets import Planet
-from app.models.data import PlanetData
+from cerridwen.planets import Planet as PlanetBase
+from app.utils import glyphs
 
-class _Planet(Planet):
+class Planet(PlanetBase):
     def longitude(self, jd = None):
         if jd is None: jd = self.jd
         long = super().longitude(jd)

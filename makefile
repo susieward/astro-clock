@@ -1,9 +1,9 @@
 
 run:
-	uvicorn app.main:app --reload
+	uvicorn app.api.main:app --reload
 
 
-rebuild:
+build:
 	cd app/static && \
 	npm run build && \
 	cd ../../

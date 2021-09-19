@@ -1,11 +1,12 @@
 # cerridwen Copyright (c) 2014 Leslie P. Polzer <leslie.polzer@gmx.net>
 # https://github.com/skypher/cerridwen
 from typing import List
-from cerridwen.planets import Ascendant, PlanetLongitude
+from cerridwen.planets import Ascendant as AscendantBase, PlanetLongitude
 import swisseph as sweph
 from app.models.data import HouseData
+from app.utils import roman_nums
 
-class _Ascendant(Ascendant):
+class Ascendant(AscendantBase):
     def position_str(self) -> str:
         return str(self.position())
 
@@ -26,8 +27,19 @@ class _Ascendant(Ascendant):
         houses = []
         for i, result in enumerate(results):
             pos = PlanetLongitude(result)
-            deg = str(pos).split(' ')[0]
+            pos_arr = str(pos).split(' ')
+            position = f'{pos_arr[0]}°{pos_arr[2]}'
+            deg = int(pos_arr[0])
             house_num = i + 1
-            data = HouseData(number=house_num, position=str(pos), sign=pos.sign, deg=int(deg))
+            roman_num = roman_nums[i]
+            name = f'House {roman_num}'
+            data = HouseData(
+                name=name,
+                number=house_num,
+                label=roman_num,
+                position=position,
+                sign=pos.sign,
+                deg=deg
+            )
             houses.append(data)
         return houses

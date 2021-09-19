@@ -5,10 +5,10 @@ from fastapi.encoders import jsonable_encoder
 from app.api.exceptions import ConnectionException, PlanetLogicException
 
 class ConnectionManager:
-    def __init__(self, websocket: WebSocket, on_receive, data_exc):
+    def __init__(self, websocket: WebSocket, on_receive, client_id):
         self.websocket = websocket
         self._on_receive = on_receive
-        self._data_exc = data_exc
+        self._client_id = client_id
 
     async def __aenter__(self):
         await self.websocket.accept()

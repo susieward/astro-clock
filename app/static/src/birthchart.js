@@ -1,5 +1,8 @@
 import cityTimezones from 'city-timezones'
 import { requestData, clear } from './main.js'
+const ChartInputs = document.getElementById('chart-input-container')
+const InputCloseBtn = document.getElementById('input-close-btn')
+const NewChartBtn = document.getElementById('new-chart')
 const ChartBtn = document.getElementById('chart-btn')
 const DateInput = document.getElementById('date-input')
 const TimeInput = document.getElementById('time-input')
@@ -10,6 +13,16 @@ var timeout
 var dateVal
 var timeVal
 var locationVal = null
+
+NewChartBtn.addEventListener('click', () => {
+  ChartInputs.style.display = 'grid'
+  NewChartBtn.style.display = 'none'
+})
+
+InputCloseBtn.addEventListener('click', () => {
+  ChartInputs.style.display = 'none'
+  NewChartBtn.style.display = 'block'
+})
 
 setDateTime()
 

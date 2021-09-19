@@ -1,28 +1,25 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class PlanetData(BaseModel):
+class Data(BaseModel):
     name: str
     position: str
     position_formatted: Optional[str] = None
-    id: int
     sign: str
     deg: int
+    label: str
+    label_sm: Optional[str] = None
+
+
+class PlanetData(Data):
+    id: int
     phase: Optional[str] = None
     dignity: Optional[str] = None
 
 
-class HouseData(BaseModel):
+class HouseData(Data):
     number: int
-    position: str
-    sign: str
-    deg: int
 
 
-class AscData(BaseModel):
-    name: str
-    position: str
-    position_formatted: str
-    sign: str
+class AscData(Data):
     houses: List[HouseData]
-    deg: int

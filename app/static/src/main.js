@@ -1,10 +1,11 @@
-// import './main.css'
-import { drawChart, drawPlanets, glyphs } from './svg.js'
+import './darkmode.js'
+import SvgCanvas from './svg.js'
 import { getCurrentDateString } from './birthchart.js'
 const Sidenav = createSidenav()
 const PlanetOutputLg = document.getElementById('planet-output')
 const PlanetOutputSm = document.getElementById('planet-output-sm')
 const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+const glyphs = ['☉', '☽', '☿', '♀', '♂', '♃', '♄', '♅', '♆', '♇']
 const baseUrl = window.location.host.includes('astro-clock.com')
   ? 'wss://astro-clock.com'
   : 'ws://127.0.0.1:8000'
@@ -19,7 +20,7 @@ var birthChartMode = false
 
 window.addEventListener('DOMContentLoaded', () => {
   if (window.innerWidth <= minWidthSmall) planetOutput = PlanetOutputSm
-  drawChart()
+  SvgCanvas.drawChart()
   initSocket()
 })
 
@@ -33,9 +34,8 @@ window.addEventListener('resize', () => {
   if (birthChartMode) {
     return processPlanetData(results)
   }
-  if (results.length > 0) drawPlanets(results)
+  if (results.length > 0) SvgCanvas.drawPlanets(results)
 })
-
 
 export function clear() {
   if (!birthChartMode) {
@@ -102,7 +102,7 @@ function processPlanetData(latest) {
     for (const result of latest) {
       updatePlanetOutput(result)
     }
-    drawPlanets(latest)
+    SvgCanvas.drawPlanets(latest)
     results = latest
     if (!loaded) loaded = true
   } catch (err) {
@@ -113,24 +113,20 @@ function processPlanetData(latest) {
 }
 
 function updatePlanetOutput(result) {
-  const filteredKeys = ['id', 'sign', 'houses', 'deg', 'position_formatted', 'phase', 'dignity']
-  if (!birthChartMode) {
-    const previous = results.find(r => r.id === result?.id)
-    if (loaded && previous) {
-      if (JSON.stringify(result) === JSON.stringify(previous)) return
-    }
+  const keys = ['name', 'position']
+  const previous = results.find(r => r.id === result?.id)
+  if (!birthChartMode && loaded && previous) {
+    if (JSON.stringify(result) === JSON.stringify(previous)) return
   }
-  const planet = result.hasOwnProperty('id') ? planets[result.id] : 'Ascendant'
-  const keys = Object.keys(result).filter(k => (result[k] && !filteredKeys.includes(k)))
   const str = buildStr(result, keys)
   if (!loaded) {
     const div = document.createElement('div')
-    div.setAttribute('id', planet)
+    div.setAttribute('id', result.name)
     div.setAttribute('class', 'planet')
     div.innerHTML = str
     planetOutput.appendChild(div)
   } else {
-    const el = document.getElementById(`${planet}`)
+    const el = document.getElementById(`${result.name}`)
     el.innerHTML = str
   }
 }
@@ -138,15 +134,9 @@ function updatePlanetOutput(result) {
 function buildStr(result, keys) {
   const str = `${keys.map((k, i) => {
     let content = `<span>${result[k]}</span>`
-
     if (i === 0 && result.hasOwnProperty('id')) {
       content = `<span>${result[k]} ${glyphs[result.id]}</span>`
     }
-    /*
-    if (k === 'dignity') {
-      content = `<span><em>(${result[k]})</em></span>`
-    }
-    */
     return content
   }).join('')}`
   return str

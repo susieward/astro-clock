@@ -1,9 +1,9 @@
 from typing import List
 from fastapi import Depends
 from cerridwen.planets import (Sun, Moon, Mercury, Mars, Venus, Jupiter, Saturn, Uranus, Neptune, Pluto)
-from app.logic.planet_logic import PlanetLogic
-from app.logic.ascendant_logic import AscendantLogic
-from app.models._planet import _Planet
+from app.logic.planet import PlanetLogic
+from app.logic.ascendant import AscendantLogic
+from app.models.planet import Planet
 from app.utils import create_metaclasses
 
 def get_planet_classes() -> List:
@@ -11,7 +11,7 @@ def get_planet_classes() -> List:
         Sun, Moon, Mercury, Mars, Venus, Jupiter,
         Saturn, Uranus, Neptune, Pluto
     ]
-    planet_classes = create_metaclasses(_Planet, planet_subclasses)
+    planet_classes = create_metaclasses(Planet, planet_subclasses)
     return planet_classes
 
 
