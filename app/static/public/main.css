@@ -5,7 +5,6 @@
 :root {
   --red: #cf222e;
   --blue: #0550ae;
-  --purple: #8250df;
   --almost-black: #222;
   --darkgrey: #24292f;
   --grey: #6e7781;
@@ -138,7 +137,6 @@ svg text tspan#sign-text {
   font-weight:normal;
 }
 
-
 #app {
   max-width: 100%;
   height: 100%;
@@ -147,8 +145,6 @@ svg text tspan#sign-text {
   overflow: hidden;
 }
 
-
-/* ------------ HEADER ------------- */
 .header {
   display: grid;
   grid-template-areas: "title left-section";
@@ -168,7 +164,6 @@ h2 {
   padding: 0;
   color: var(--main-text-color);
 }
-
 
 .header-left {
   grid-area: left-section;
@@ -191,10 +186,6 @@ h2 {
   left: 20px;
   top: 30px;
   z-index: 10;
-}
-
-#new-chart {
-
 }
 
 #chart-inputs {
@@ -320,11 +311,7 @@ svg#responsive-svg {
   position: relative;
 }
 
-#planet-output-sm > div {
-}
-
 /* ------ CHART DETAILS ------- */
-
 #chart-details-container {
   grid-area: chart-details;
   display: grid;
@@ -339,15 +326,6 @@ svg#responsive-svg {
   display: grid;
   grid-row-gap: 25px;
   justify-content: flex-end;
-}
-
-#houses-output {
-  display: grid;
-  justify-content: flex-end;
-  margin-top: 150px;
-  margin-left: auto;
-  margin-right: 20px;
-  margin-bottom: auto;
 }
 
 .details-title {
@@ -390,7 +368,6 @@ button {
   padding: 0;
 }
 
-/* ----------- MENU ICON ---------- */
 #menu {
   display: none;
 }
@@ -418,8 +395,6 @@ button {
   stroke-dashoffset: 0px;
 }
 
-
-/* ------------- SIDENAV ------------ */
 #sidenav {
   display: grid;
   grid-template-columns: 1fr;

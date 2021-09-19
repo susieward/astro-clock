@@ -26,7 +26,7 @@ export default class SvgCanvas {
       const degrees = planet.deg
       const angle = this.calcPlanetAngle(planet, degrees)
       const label = (window.innerWidth <= minWidthSmall) ? planet.label_sm : planet.label
-      this.drawPlanetPoint(angle, label, degrees)
+      this.drawPlanet(angle, label, degrees)
       this.updatePlanetAspects(planet, angle, data)
     }
     if (this.planetsWithAspects.length > 0) this.drawAspects()
@@ -57,7 +57,7 @@ export default class SvgCanvas {
     return (startAngle - degrees)
   }
 
-  static drawPlanetPoint(angle, label){
+  static drawPlanet(angle, label){
     const { center_x, center_y, min, radius } = getClientDimensions()
     const innerDimensions = { center_x, center_y, radius: (radius * 0.8), min }
     let { x, y } = calcAngleCoords(angle, innerDimensions)
@@ -76,16 +76,26 @@ export default class SvgCanvas {
       dx = 0
     }
     const tspanAttrs = { dy, dx, id: 'planet-text' }
-    drawPointWithLabel(pointAttrs, textAttrs, tspanAttrs, label)
+    drawSVG('circle', { ...pointAttrs })
+    drawTextWithTspan(textAttrs, tspanAttrs, label)
   }
 
   static drawAspects() {
-    const { center_x, center_y, min, radius } = getClientDimensions()
-    const innerDimensions = { center_x, center_y, radius: (radius * 0.8), min }
-    // let { x, y } = calcAngleCoords(angle, innerDimensions)
+    const { center_x, center_y, min, radius, innerRadius } = getClientDimensions()
+    const innerDimensions = { center_x, center_y, radius: innerRadius, min }
+    const aspectsAdded = []
+
     for (const planet of this.planetsWithAspects) {
       const planetA = calcAngleCoords(planet.angle, innerDimensions)
+
       for (const aspect of planet.aspects) {
+        const reverse = buildRow(aspect.planetB, aspect.name, planet.name)
+        if (aspectsAdded.includes(reverse)) {
+          continue
+        }
+        const content = buildRow(planet.name, aspect.name, aspect.planetB)
+        aspectsAdded.push(content)
+
         const planetB = calcAngleCoords(aspect.angleB, innerDimensions)
         drawSVG('path', {
           d: `M ${planetA.x},${planetA.y}, L ${planetB.x},${planetB.y}`,
@@ -98,49 +108,37 @@ export default class SvgCanvas {
 
   static drawHouses(asc) {
     const houses = asc.houses
-    const { center_x, center_y, min, radius } = getClientDimensions()
-    const hex = '#999FA6'
-    const innerRadius = (radius * 0.8)
-    const innerData = { center_x, center_y, radius: innerRadius, min }
-    let houseAngles = houses.map(h => {
-      const degrees = Number(h.deg)
-      const angle = this.calcPlanetAngle(h, degrees)
-      return { degrees, angle, ...h }
-    })
-    houseAngles = houseAngles.map((h, i) => {
-      let next = houseAngles[i + 1]?.angle
-      if (!next) next = 360
-      return { angle: h.angle, startAngle: h.angle, endAngle: next, ...h }
-    })
-
-    for (const h of houseAngles) {
-      const { startAngle, endAngle, angle } = h
-      let { x, y } = calcAngleCoords(angle)
-      const innerCoords = calcAngleCoords(angle, innerData)
-      drawSVG('path', { d: `M ${center_x},${center_y}, L ${innerCoords.x},${innerCoords.y}`, id: 'house-path' })
-      const labelRadius = (radius * 0.3)
-      const labelData = { center_x, center_y, radius: labelRadius, min }
-      const angleDiff = Math.abs(endAngle) - Math.abs(startAngle)
-      const midAngle = angle - (angleDiff / 2)
-      const labelCoords = calcAngleCoords(midAngle, labelData)
-      const textEl = drawSVG('text', {
-        x: labelCoords.x, y: labelCoords.y, style: 'text-anchor: middle;'
-      }, false)
-      const tspan = drawSVG('tspan', {
-        id: 'house-text',
-        'dominant-baseline': 'central',
-        'alignment-baseline': 'middle'
-      }, false, h.label)
-      textEl.append(tspan)
-      ChartEl.appendChild(textEl)
+    const { center_x, center_y, min, radius, innerRadius } = getClientDimensions()
+    const innerDimensions = { center_x, center_y, radius: innerRadius, min }
+    const textDimensions = { center_x, center_y, radius: (radius * 0.3), min }
+    const tspanAttrs = { id: 'house-text',
+      'dominant-baseline': 'central',
+      'alignment-baseline': 'middle'
     }
-    // displayHouseDetails(houses)
+    let h, startAngle, endAngle, next;
+    for (let i = 0; i < houses.length; i++) {
+      h = houses[i]
+      startAngle = this.calcPlanetAngle(h, h.deg)
+      next = houses[i + 1]
+      endAngle = (!next) ? 360 : this.calcPlanetAngle(next, next.deg)
+      const innerCoords = calcAngleCoords(startAngle, innerDimensions)
+      drawSVG('path', {
+        d: `M ${center_x},${center_y}, L ${innerCoords.x},${innerCoords.y}`,
+        id: 'house-path'
+      })
+      const angleDiff = Math.abs(endAngle) - Math.abs(startAngle)
+      const midAngle = startAngle - (angleDiff / 2)
+      const textCoords = calcAngleCoords(midAngle, textDimensions)
+      const textAttrs = { x: textCoords.x, y: textCoords.y, style: 'text-anchor: middle;' }
+      drawTextWithTspan(textAttrs, tspanAttrs, h.label)
+    }
   }
 
   static drawChart(asc = null) {
-    const { center_x, center_y, min, radius } = getClientDimensions()
+    const { center_x, center_y, min, radius, innerRadius } = getClientDimensions()
     ChartEl.replaceChildren()
     drawSVG('circle', { id: 'chart-circle', cy: center_y, cx: center_x, r: radius })
+    drawSVG('circle', { cy: center_y, cx: center_x, r: innerRadius })
 
     let index = 0
     let startAngle = 0
@@ -173,7 +171,7 @@ export default class SvgCanvas {
         startAngle = startAngle - 30
         endAngle = endAngle - 30
       }
-      drawSign(index, sign, startAngle, { center_x, center_y, min, radius })
+      drawSign(index, sign, startAngle, { center_x, center_y, min, radius, innerRadius })
       this.signData.push({ id: index, sign, startAngle, endAngle })
       index++
     }
@@ -181,30 +179,24 @@ export default class SvgCanvas {
 }
 
 function drawSign(index, sign, startAngle, { ...dimensions }) {
-  const { center_x, center_y, min, radius } = dimensions
+  const { center_x, center_y, min, radius, innerRadius } = dimensions
   const glyph = signGlyphs[index]
   let { x, y } = calcAngleCoords(startAngle)
-  const innerRadius = (radius * 0.8)
   const innerData = { center_x, center_y, radius: innerRadius, min }
   const innerCoords = calcAngleCoords(startAngle, innerData)
-  drawSVG('circle', { cy: center_y, cx: center_x, r: innerRadius })
-  drawSVG('path', {
-    id: 'sign-path',
+  drawSVG('path', { id: 'sign-path',
     d: `M ${innerCoords.x},${innerCoords.y}, L ${x},${y}`
   })
   const midAngle = startAngle - 15
   const textData = { center_x, center_y, radius: (radius * 0.9), min }
   const textCoords = calcAngleCoords(midAngle, textData)
-  const textEl = drawSVG('text', {
-    x: textCoords.x, y: textCoords.y, style: 'text-anchor: middle;'
-  }, false)
-  const tspan = drawSVG('tspan', {
+  const textAttrs ={ x: textCoords.x, y: textCoords.y, style: 'text-anchor: middle;' }
+  const tspanAttrs = {
     id: 'sign-text',
     'dominant-baseline': 'central',
     'alignment-baseline': 'middle'
-  }, false, glyph)
-  textEl.append(tspan)
-  ChartEl.appendChild(textEl)
+  }
+  drawTextWithTspan(textAttrs, tspanAttrs, glyph)
 }
 
 function calcAspects(angle, orb) {
@@ -252,11 +244,11 @@ function getClientDimensions() {
   const radius = window.innerWidth <= minWidthSmall
     ? (min / 2) * 0.7
     : (min / 2) * 0.9
-  return { center_x, center_y, min, radius }
+  const innerRadius = (radius * 0.8)
+  return { center_x, center_y, min, radius, innerRadius }
 }
 
-function drawPointWithLabel(pointAttrs, textAttrs, tspanAttrs, label) {
-  drawSVG('circle', { ...pointAttrs })
+function drawTextWithTspan(textAttrs, tspanAttrs, label) {
   const textEl = drawSVG('text', { ...textAttrs }, false)
   const tspan = drawSVG('tspan', { ...tspanAttrs }, false, label)
   textEl.append(tspan)
@@ -289,7 +281,7 @@ function displayAspectDetails() {
     ChartDetails.innerHTML = buildDetails(title, content)
 }
 
-function buildRow(left, center, right, centerColor = null) {
+function buildRow(left, center, right) {
   return (`
     <div class="row">
       <span>${left}</span>
