@@ -1,6 +1,6 @@
 
 run:
-	uvicorn app.api.main:app --reload
+	uvicorn app.main:app --reload
 
 
 build:
