@@ -139,7 +139,10 @@ export default class SvgCanvas {
     ChartEl.replaceChildren()
     drawSVG('circle', { id: 'chart-circle', cy: center_y, cx: center_x, r: radius })
     drawSVG('circle', { cy: center_y, cx: center_x, r: innerRadius })
+    this.drawSigns(asc, center_x, center_y, min, radius, innerRadius)
+  }
 
+  static drawSigns(asc = null, center_x, center_y, min, radius, innerRadius) {
     let index = 0
     let startAngle = 0
     let endAngle = 30
